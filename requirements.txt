@@ -87,3 +87,6 @@ wandb == 0.10.11
 
 # scripts
 typing_extensions==4.8.0
+
+# protobuf due to tensorflow issues
+protobuf==3.20.1

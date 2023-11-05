@@ -1,6 +1,7 @@
 import os
 import json
 import traceback
+import multiprocessing
 from copy import Error
 from threading import Lock, Thread
 
@@ -20,8 +21,7 @@ from rl.A3C_2_actors.set_actor import SetActor
 tf.keras.backend.set_floatx("float64")
 
 ID = wandb.util.generate_id()
-WORKERS = 6
-MAX_EPISODES = 1
+WORKERS = multiprocessing.cpu_count()
 CUR_EPISODE = 0
 GAMMA = 0.99
 EVAL_INTERVAL = 10
@@ -153,7 +153,7 @@ class Agent:
     def observe(self):
         wandb.init(project="xeda", id=ID, name=self.agent_name, config=self.args)
 
-    def train(self):
+    def train(self, episodes: int):
         workers = []
 
         for agent_id in range(WORKERS):
@@ -172,10 +172,11 @@ class Agent:
             workers.append(
                 WorkerAgent(
                     env,
+                    self.agent_name,
                     self.global_set_actor,
                     self.global_operation_actor,
                     self.global_critic,
-                    MAX_EPISODES,
+                    episodes,
                     self.curiosity_module,
                     self.set_op_counters,
                     agentId=agent_id,
@@ -200,6 +201,7 @@ class WorkerAgent(Thread):
     def __init__(
         self,
         env: PipelineEnvironment,
+        agent_name: str,
         global_set_actor: SetActor,
         global_operation_actor: OperationActor,
         global_critic: Critic,
@@ -216,6 +218,7 @@ class WorkerAgent(Thread):
         self.other_lock = Lock()
         self.env = env
         self.agentId = agentId
+        self.agent_name = agent_name
         self.set_state_dim = env.set_state_dim
         self.operation_state_dim = env.operation_state_dim
         self.steps = global_set_actor.steps
