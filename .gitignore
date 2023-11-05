@@ -1,0 +1,12 @@
+wandb
+app/data/sdss
+app/data/spotify
+app/app_models/balanced
+app/app_models/custom
+app/app_models/decreasing
+app/app_models/high
+app/app_models/increasing
+app/app_models/low
+saved_models
+.DS_STORE
+__pycache__

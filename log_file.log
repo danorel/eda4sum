@@ -1,0 +1,96 @@
+2023-10-27 13:12:05,328 [INFO] Node sampling started...
+2023-10-27 13:12:05,329 [INFO] Starting reading members...
+2023-10-27 13:12:06,971 [INFO] Finished reading members...
+2023-10-27 13:12:06,971 [INFO] Sampling by csv...
+2023-10-27 13:12:06,974 [INFO] Sampling by csv...
+2023-10-27 13:12:06,975 [INFO] Sampling by csv...
+2023-10-27 13:12:06,976 [INFO] Sampling by csv...
+2023-10-27 13:12:06,977 [INFO] Sampling by csv...
+2023-10-27 13:12:06,978 [INFO] Node sampling is done and saved!
+2023-10-27 13:12:16,724 [INFO] Node sampling started...
+2023-10-27 13:12:16,724 [INFO] Starting reading members...
+2023-10-27 13:12:18,405 [INFO] Finished reading members...
+2023-10-27 13:12:18,405 [INFO] Sampling by csv...
+2023-10-27 13:12:18,406 [INFO] Sampling by csv...
+2023-10-27 13:12:18,407 [INFO] Sampling by csv...
+2023-10-27 13:12:18,408 [INFO] Sampling by csv...
+2023-10-27 13:12:18,408 [INFO] Sampling by csv...
+2023-10-27 13:12:18,409 [INFO] Node sampling is done and saved!
+2023-10-27 13:13:38,618 [INFO] Started reading target set dir: /Users/danorel/Workspace/Education/University/NYU/Research/EDA4Sum/rl/targets/sdss
+2023-10-27 13:13:38,635 [INFO] Found target set: sdss/node_sampling/target_set_db9edb21-ca83-4819-b54e-4f7a10929296
+2023-10-27 13:13:38,635 [INFO] Started training a policy [target_set_name=sdss/node_sampling/target_set_db9edb21-ca83-4819-b54e-4f7a10929296, target_set_type=node_sampling, mode=scattered]
+2023-10-27 13:14:56,827 [WARNING] 5 out of the last 5 calls to <function Model.make_predict_function.<locals>.predict_function at 0x163dab790> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/tutorials/customization/performance#python_or_tensor_args and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2023-10-27 13:14:56,842 [WARNING] 6 out of the last 6 calls to <function Model.make_predict_function.<locals>.predict_function at 0x163e0b0d0> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/tutorials/customization/performance#python_or_tensor_args and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2023-10-27 13:14:59,169 [WARNING] 7 out of the last 7 calls to <function Model.make_predict_function.<locals>.predict_function at 0x164087160> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/tutorials/customization/performance#python_or_tensor_args and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2023-10-27 13:14:59,188 [WARNING] 8 out of the last 8 calls to <function Model.make_predict_function.<locals>.predict_function at 0x1640edf70> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/tutorials/customization/performance#python_or_tensor_args and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2023-10-27 13:14:59,220 [WARNING] 9 out of the last 9 calls to <function Model.make_predict_function.<locals>.predict_function at 0x1640ed5e0> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/tutorials/customization/performance#python_or_tensor_args and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2023-10-27 13:14:59,230 [WARNING] 10 out of the last 10 calls to <function Model.make_predict_function.<locals>.predict_function at 0x1640edc10> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/tutorials/customization/performance#python_or_tensor_args and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2023-10-27 13:14:59,237 [WARNING] 11 out of the last 11 calls to <function Model.make_predict_function.<locals>.predict_function at 0x163ff80d0> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/tutorials/customization/performance#python_or_tensor_args and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2023-10-27 13:14:59,243 [WARNING] 11 out of the last 11 calls to <function Model.make_predict_function.<locals>.predict_function at 0x1644a5550> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/tutorials/customization/performance#python_or_tensor_args and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+2023-10-27 13:17:33,615 [WARNING] From /Users/danorel/.pyenv/versions/eda4sum_3.8.15/lib/python3.8/site-packages/tensorflow/python/training/tracking/tracking.py:111: Model.state_updates (from tensorflow.python.keras.engine.training) is deprecated and will be removed in a future version.
+Instructions for updating:
+This property should not be used in TensorFlow 2.0, as updates are applied automatically.
+2023-10-27 13:17:33,622 [WARNING] From /Users/danorel/.pyenv/versions/eda4sum_3.8.15/lib/python3.8/site-packages/tensorflow/python/training/tracking/tracking.py:111: Layer.updates (from tensorflow.python.keras.engine.base_layer) is deprecated and will be removed in a future version.
+Instructions for updating:
+This property should not be used in TensorFlow 2.0, as updates are applied automatically.
+2023-10-27 13:17:35,955 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_db9edb21-ca83-4819-b54e-4f7a10929296/scattered/final/operation_actor/assets
+2023-10-27 13:17:39,988 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_db9edb21-ca83-4819-b54e-4f7a10929296/scattered/final/set_actor/assets
+2023-10-27 13:17:44,656 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_db9edb21-ca83-4819-b54e-4f7a10929296/scattered/final/critic/assets
+2023-10-27 13:17:44,771 [INFO] Finished training the policy [target_set_name=sdss/node_sampling/target_set_db9edb21-ca83-4819-b54e-4f7a10929296, target_set_type=node_sampling, mode=scattered]
+2023-10-27 13:17:44,771 [INFO] Found target set: sdss/node_sampling/target_set_2a11981c-320c-4b18-a4f1-7b78660bb9dd
+2023-10-27 13:17:44,771 [INFO] Started training a policy [target_set_name=sdss/node_sampling/target_set_2a11981c-320c-4b18-a4f1-7b78660bb9dd, target_set_type=node_sampling, mode=scattered]
+2023-10-27 13:19:01,393 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_2a11981c-320c-4b18-a4f1-7b78660bb9dd/scattered/final/operation_actor/assets
+2023-10-27 13:19:05,368 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_2a11981c-320c-4b18-a4f1-7b78660bb9dd/scattered/final/set_actor/assets
+2023-10-27 13:19:09,844 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_2a11981c-320c-4b18-a4f1-7b78660bb9dd/scattered/final/critic/assets
+2023-10-27 13:19:09,944 [INFO] Finished training the policy [target_set_name=sdss/node_sampling/target_set_2a11981c-320c-4b18-a4f1-7b78660bb9dd, target_set_type=node_sampling, mode=scattered]
+2023-10-27 13:19:09,945 [INFO] Found target set: sdss/node_sampling/target_set_9b0c0c1a-84d9-4d68-aa59-a10a6a00fae1
+2023-10-27 13:19:09,945 [INFO] Started training a policy [target_set_name=sdss/node_sampling/target_set_9b0c0c1a-84d9-4d68-aa59-a10a6a00fae1, target_set_type=node_sampling, mode=scattered]
+2023-10-27 13:20:26,185 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_9b0c0c1a-84d9-4d68-aa59-a10a6a00fae1/scattered/final/operation_actor/assets
+2023-10-27 13:20:31,104 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_9b0c0c1a-84d9-4d68-aa59-a10a6a00fae1/scattered/final/set_actor/assets
+2023-10-27 13:20:35,220 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_9b0c0c1a-84d9-4d68-aa59-a10a6a00fae1/scattered/final/critic/assets
+2023-10-27 13:20:35,325 [INFO] Finished training the policy [target_set_name=sdss/node_sampling/target_set_9b0c0c1a-84d9-4d68-aa59-a10a6a00fae1, target_set_type=node_sampling, mode=scattered]
+2023-10-27 13:20:35,325 [INFO] Found target set: sdss/node_sampling/target_set_3cf088e5-c5db-431f-b720-b026cf97e606
+2023-10-27 13:20:35,325 [INFO] Started training a policy [target_set_name=sdss/node_sampling/target_set_3cf088e5-c5db-431f-b720-b026cf97e606, target_set_type=node_sampling, mode=scattered]
+2023-10-27 13:21:54,189 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_3cf088e5-c5db-431f-b720-b026cf97e606/scattered/final/operation_actor/assets
+2023-10-27 13:21:58,148 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_3cf088e5-c5db-431f-b720-b026cf97e606/scattered/final/set_actor/assets
+2023-10-27 13:22:02,782 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_3cf088e5-c5db-431f-b720-b026cf97e606/scattered/final/critic/assets
+2023-10-27 13:22:02,880 [INFO] Finished training the policy [target_set_name=sdss/node_sampling/target_set_3cf088e5-c5db-431f-b720-b026cf97e606, target_set_type=node_sampling, mode=scattered]
+2023-10-27 13:22:02,881 [INFO] Found target set: sdss/node_sampling/target_set_cf0f83fa-d340-401d-8f44-f0824893204a
+2023-10-27 13:22:02,881 [INFO] Started training a policy [target_set_name=sdss/node_sampling/target_set_cf0f83fa-d340-401d-8f44-f0824893204a, target_set_type=node_sampling, mode=scattered]
+2023-10-27 13:23:23,916 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_cf0f83fa-d340-401d-8f44-f0824893204a/scattered/final/operation_actor/assets
+2023-10-27 13:23:33,117 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_cf0f83fa-d340-401d-8f44-f0824893204a/scattered/final/set_actor/assets
+2023-10-27 13:23:43,430 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_cf0f83fa-d340-401d-8f44-f0824893204a/scattered/final/critic/assets
+2023-10-27 13:23:43,659 [INFO] Finished training the policy [target_set_name=sdss/node_sampling/target_set_cf0f83fa-d340-401d-8f44-f0824893204a, target_set_type=node_sampling, mode=scattered]
+2023-10-27 13:23:43,662 [INFO] Finished reading target set dir: /Users/danorel/Workspace/Education/University/NYU/Research/EDA4Sum/rl/targets/sdss
+2023-10-27 13:23:43,663 [INFO] Started reading target set dir: /Users/danorel/Workspace/Education/University/NYU/Research/EDA4Sum/rl/targets/sdss
+2023-10-27 13:23:43,666 [INFO] Found target set: sdss/node_sampling/target_set_db9edb21-ca83-4819-b54e-4f7a10929296
+2023-10-27 13:23:43,666 [INFO] Started training a policy [target_set_name=sdss/node_sampling/target_set_db9edb21-ca83-4819-b54e-4f7a10929296, target_set_type=node_sampling, mode=concentrated]
+2023-10-27 13:25:39,458 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_db9edb21-ca83-4819-b54e-4f7a10929296/concentrated/final/operation_actor/assets
+2023-10-27 13:25:43,386 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_db9edb21-ca83-4819-b54e-4f7a10929296/concentrated/final/set_actor/assets
+2023-10-27 13:25:47,397 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_db9edb21-ca83-4819-b54e-4f7a10929296/concentrated/final/critic/assets
+2023-10-27 13:25:47,502 [INFO] Finished training the policy [target_set_name=sdss/node_sampling/target_set_db9edb21-ca83-4819-b54e-4f7a10929296, target_set_type=node_sampling, mode=concentrated]
+2023-10-27 13:25:47,502 [INFO] Found target set: sdss/node_sampling/target_set_2a11981c-320c-4b18-a4f1-7b78660bb9dd
+2023-10-27 13:25:47,502 [INFO] Started training a policy [target_set_name=sdss/node_sampling/target_set_2a11981c-320c-4b18-a4f1-7b78660bb9dd, target_set_type=node_sampling, mode=concentrated]
+2023-10-27 13:27:06,005 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_2a11981c-320c-4b18-a4f1-7b78660bb9dd/concentrated/final/operation_actor/assets
+2023-10-27 13:27:10,567 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_2a11981c-320c-4b18-a4f1-7b78660bb9dd/concentrated/final/set_actor/assets
+2023-10-27 13:27:15,033 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_2a11981c-320c-4b18-a4f1-7b78660bb9dd/concentrated/final/critic/assets
+2023-10-27 13:27:15,144 [INFO] Finished training the policy [target_set_name=sdss/node_sampling/target_set_2a11981c-320c-4b18-a4f1-7b78660bb9dd, target_set_type=node_sampling, mode=concentrated]
+2023-10-27 13:27:15,144 [INFO] Found target set: sdss/node_sampling/target_set_9b0c0c1a-84d9-4d68-aa59-a10a6a00fae1
+2023-10-27 13:27:15,145 [INFO] Started training a policy [target_set_name=sdss/node_sampling/target_set_9b0c0c1a-84d9-4d68-aa59-a10a6a00fae1, target_set_type=node_sampling, mode=concentrated]
+2023-10-27 13:28:29,968 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_9b0c0c1a-84d9-4d68-aa59-a10a6a00fae1/concentrated/final/operation_actor/assets
+2023-10-27 13:28:35,317 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_9b0c0c1a-84d9-4d68-aa59-a10a6a00fae1/concentrated/final/set_actor/assets
+2023-10-27 13:28:40,926 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_9b0c0c1a-84d9-4d68-aa59-a10a6a00fae1/concentrated/final/critic/assets
+2023-10-27 13:28:41,031 [INFO] Finished training the policy [target_set_name=sdss/node_sampling/target_set_9b0c0c1a-84d9-4d68-aa59-a10a6a00fae1, target_set_type=node_sampling, mode=concentrated]
+2023-10-27 13:28:41,032 [INFO] Found target set: sdss/node_sampling/target_set_3cf088e5-c5db-431f-b720-b026cf97e606
+2023-10-27 13:28:41,032 [INFO] Started training a policy [target_set_name=sdss/node_sampling/target_set_3cf088e5-c5db-431f-b720-b026cf97e606, target_set_type=node_sampling, mode=concentrated]
+2023-10-27 13:30:01,897 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_3cf088e5-c5db-431f-b720-b026cf97e606/concentrated/final/operation_actor/assets
+2023-10-27 13:30:05,977 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_3cf088e5-c5db-431f-b720-b026cf97e606/concentrated/final/set_actor/assets
+2023-10-27 13:30:10,022 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_3cf088e5-c5db-431f-b720-b026cf97e606/concentrated/final/critic/assets
+2023-10-27 13:30:10,117 [INFO] Finished training the policy [target_set_name=sdss/node_sampling/target_set_3cf088e5-c5db-431f-b720-b026cf97e606, target_set_type=node_sampling, mode=concentrated]
+2023-10-27 13:30:10,118 [INFO] Found target set: sdss/node_sampling/target_set_cf0f83fa-d340-401d-8f44-f0824893204a
+2023-10-27 13:30:10,118 [INFO] Started training a policy [target_set_name=sdss/node_sampling/target_set_cf0f83fa-d340-401d-8f44-f0824893204a, target_set_type=node_sampling, mode=concentrated]
+2023-10-27 13:31:27,166 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_cf0f83fa-d340-401d-8f44-f0824893204a/concentrated/final/operation_actor/assets
+2023-10-27 13:31:31,299 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_cf0f83fa-d340-401d-8f44-f0824893204a/concentrated/final/set_actor/assets
+2023-10-27 13:31:35,523 [INFO] Assets written to: saved_models/sdss/node_sampling/target_set_cf0f83fa-d340-401d-8f44-f0824893204a/concentrated/final/critic/assets
+2023-10-27 13:31:35,616 [INFO] Finished training the policy [target_set_name=sdss/node_sampling/target_set_cf0f83fa-d340-401d-8f44-f0824893204a, target_set_type=node_sampling, mode=concentrated]
+2023-10-27 13:31:35,619 [INFO] Finished reading target set dir: /Users/danorel/Workspace/Education/University/NYU/Research/EDA4Sum/rl/targets/sdss
