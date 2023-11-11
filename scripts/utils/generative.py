@@ -2,21 +2,23 @@ import gc
 import itertools
 import json
 import pathlib
-import tensorflow as tf
 import typing as t
 
+from random import randrange
+from pydantic import BaseModel
 from tqdm import tqdm
 
-from app.model_manager import ModelManager
 from app.pipelines.pipeline_precalculated_sets import PipelineWithPrecalculatedSets
+from scripts.utils.model_manager import ModelManager
 from scripts.utils.agent import Agent
 from utils.debugging import logger
+from utils.data_writer import write_pipeline
 
 
 root = pathlib.Path.cwd()
 
 target_set_folder = root / "rl" / "targets" / "sdss"
-model_folder = root / "saved_models" / "sdss"
+model_folder = root / "saved_models"
 
 
 def combinations(lst):
@@ -56,11 +58,29 @@ def train_policies(episodes: int, batch_size: int = 3):
             gc.collect()
 
 
-def scan_folders(path: pathlib.Path):
-    return list(filter(lambda f: f.is_dir(), path.glob("*")))
+class OperatorRequest(BaseModel):
+    dataset_to_explore: str
+    input_set_id: t.Optional[int] = None
+    dimensions: t.Optional[t.List[str]] = None
+    get_scores: t.Optional[bool] = False
+    get_predicted_scores: t.Optional[bool] = False
+    target_set: t.Optional[str] = None
+    curiosity_weight: t.Optional[float] = None
+    found_items_with_ratio: t.Optional[t.Dict[str, float]] = None
+    target_items: t.Optional[t.List[str]] = None
+    previous_set_states: t.Optional[t.List[t.List[float]]] = None
+    previous_operation_states: t.Optional[t.List[t.List[float]]] = None
+    seen_predicates: t.Optional[t.List[str]] = []
+    dataset_ids: t.Optional[t.List[int]] = None
+    seen_sets: t.Optional[t.List[int]] = [],
+    utility_weights: t.Optional[t.List[float]] = [0.333, 0.333, 0.334],
+    previous_operations: t.Optional[t.List[str]] = [],
+    decreasing_gamma: t.Optional[bool] = False,
+    galaxy_class_scores: t.Optional[t.Dict[str, float]] = None,
+    weights_mode: t.Optional[str] = None
 
 
-def generate_pipeline(database_pipeline_cache, model_manager, prev_request):
+def generate_pipeline(database_pipeline_cache, model_manager: ModelManager, prev_request: OperatorRequest):
     """
     return {
         "predictedOperation": operation,
@@ -72,12 +92,13 @@ def generate_pipeline(database_pipeline_cache, model_manager, prev_request):
         "reward": reward
     }
     """
+    next_request = OperatorRequest.parse_obj(prev_request.dict())
     pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache["galaxies"]
-    if len(prev_request.dataset_ids) == 0:
+    if prev_request.dataset_ids is None or len(prev_request.dataset_ids) == 0:
         datasets = [pipeline.get_dataset()]
     else:
         datasets = pipeline.get_groups_as_datasets(prev_request.dataset_ids)
-    next_request = model_manager.get_prediction(
+    prediction = model_manager.get_prediction(
         datasets,
         prev_request.weights_mode,
         prev_request.target_items,
@@ -85,38 +106,23 @@ def generate_pipeline(database_pipeline_cache, model_manager, prev_request):
         previous_set_states=prev_request.previous_set_states,
         previous_operation_states=prev_request.previous_operation_states,
     )
+    next_request.dimensions.append(prediction.get("predictedDimension"))
+    next_request.found_items_with_ratio = prediction.get("foundItemsWithRatio")
+    next_request.previous_operations.append(prediction.get("predictedOperation"))
+    next_request.previous_set_states = prediction.get("setStates")
+    next_request.previous_operation_states = prediction.get("operationStates")
+    if prediction.get("predictedSetId") is not None:
+        next_request.input_set_id = prediction.get("predictedSetId")
+        next_request.seen_sets.append(prediction.get("predictedSetId"))
     return next_request
 
 
-def generate_pipelines():
-    modes = ["scattered", "concentrated"]
-    target_set_types = ["node_sampling"]
+def scan_folders(path: pathlib.Path):
+    return list(filter(lambda f: f.is_dir(), path.glob("*")))
 
-    logger.info(f"Started gathering trained policies")
-    trained_policies = []
-    for target_set_type in tqdm(scan_folders(model_folder)):
-        for target_set in scan_folders(target_set_type):
-            logger.info(f"Started gathering target set policy {target_set}")
-            for mode in modes:
-                for model in scan_folders(target_set / mode):
-                    logger.info(f"Started gathering policy {model}")
-                    if (model / "set_op_counters.json").exists():
-                        with (model / "set_op_counters.json").open() as f:
-                            set_op_counters = json.load(f)
-                    else:
-                        set_op_counters = {}
-                    trained_policies.append(
-                        {
-                            "set": tf.keras.models.load_model(f"{model}/set_actor"),
-                            "operation": tf.keras.models.load_model(f"{model}/operation_actor"),
-                            "set_op_counters": set_op_counters,
-                        }
-                    )
-                    logger.info(f"Finished gathering policy {model}")
-            logger.info(f"Finished gathering target set policy {target_set}")
-    logger.info(f"Finished gathering trained policies")
 
-    logger.info(f"Started reading precalculated dataset of pipelines")
+def generate_pipelines_from_policies(min_pipeline_size: int, max_pipeline_size: int):
+    logger.info(f"Reading precalculated dataset of pipelines")
     data_folder = "./app/data"
     database_pipeline_cache = {}
     database_pipeline_cache["galaxies"] = PipelineWithPrecalculatedSets(
@@ -136,9 +142,36 @@ def generate_pipelines():
         ],
         id_column="galaxies.objID",
     )
-    logger.info(f"Finished reading precalculated dataset of pipelines")
+    logger.info(f"Read precalculated dataset of pipelines")
 
-    model_manager = ModelManager(database_pipeline_cache["galaxies"])
-    
-    pipeline = generate_pipeline(database_pipeline_cache, model_manager, {})
-    print(pipeline)
+    logger.info(f"Started generating trained pipelines")
+    modes = ["scattered", "concentrated"]
+    sampling_methods = ["node_sampling"]
+    for mode, sampling_method in combinations([modes, sampling_methods]):
+        for target_set_name in scan_folders(model_folder / "sampling" / sampling_method):
+            with (target_set_name / mode / "info.json").open("r") as f:
+                info = json.load(f)
+            for model_path in scan_folders(target_set_name / mode):
+                if "final" in str(model_path):
+                    continue
+                pipeline_size = randrange(min_pipeline_size, max_pipeline_size)
+                pipeline, operator = ([], OperatorRequest(dataset_to_explore="galaxies",
+                                                          utility_weights=info.get("utility_weights"),
+                                                          decreasing_gamma=False,
+                                                          galaxy_class_scores=None,
+                                                          dimensions=[],
+                                                          seen_sets=[],
+                                                          previous_operations=[],
+                                                          previous_operation_states=None,
+                                                          previous_set_states=None))
+                logger.info(f"Generating pipeline with {model_path} of size {pipeline_size}")
+                for _ in range(pipeline_size):
+                    model_manager = ModelManager(database_pipeline_cache["galaxies"], model_path)
+                    operator = generate_pipeline(database_pipeline_cache, 
+                                                 model_manager, 
+                                                 operator)
+                    pipeline.append(operator.dict())
+                pipeline_filename = f"{target_set_name.stem}_{mode}.json"
+                write_pipeline(pipeline_filename, pipeline, sampling_method)
+                logger.info(f"Finished gathering pipeline with {model_path}")
+    logger.info(f"Finished generating trained pipelines")
