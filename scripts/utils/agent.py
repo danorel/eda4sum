@@ -78,6 +78,7 @@ class Agent:
         }
         self.env = PipelineEnvironment(
             self.pipeline,
+            database_name="sdss",
             target_set_name=target_set_name,
             mode=mode,
             episode_steps=self.episode_steps,

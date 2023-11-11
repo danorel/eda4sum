@@ -19,10 +19,21 @@ from .action_manager import ActionManager
 
 
 class PipelineEnvironment(gym.Env):
-    def __init__(self, pipeline: PipelineWithPrecalculatedSets, mode="simple", target_set_name=None, number_of_examples=3, agentId=-1,
-                 episode_steps=100, target_items=None, operators=[], utility_mode=None, utility_weights=None):
+    def __init__(self, 
+                 pipeline: PipelineWithPrecalculatedSets, 
+                 database_name = "sdss", 
+                 mode="simple",
+                 target_set_name=None, 
+                 number_of_examples=3, 
+                 agentId=-1,
+                 episode_steps=100,
+                 target_items=None, 
+                 operators=[], 
+                 utility_mode=None, 
+                 utility_weights=None):
         self.pipeline = pipeline
         self.mode = mode
+        self.database_name = database_name
         self.target_set_name = target_set_name
         self.number_of_examples = number_of_examples
         self.episode_steps = episode_steps
@@ -31,7 +42,7 @@ class PipelineEnvironment(gym.Env):
         self.exploration_dimensions = self.pipeline.exploration_columns
         self.target_set_index = -1
         if self.target_set_name != None and target_items == None:
-            with open(f"./rl/targets/{self.target_set_name}.json") as f:
+            with open(f"./rl/targets/{self.database_name}/{self.target_set_name}.json") as f:
                 self.state_encoder = StateEncoder(
                     pipeline, target_items=set(json.load(f)))
         elif self.mode == "scattered" and target_items == None:
@@ -141,7 +152,7 @@ class PipelineEnvironment(gym.Env):
         self.target_set_name = random.choice(available_target_sets)
         self.target_set_index = available_target_sets.index(
             self.target_set_name)
-        with open(f"./rl/targets/{self.target_set_name}.json") as f:
+        with open(f"./rl/targets/{self.database_name}/{self.target_set_name}.json") as f:
             self.initial_target_items = set(json.load(f))
         example_ids = random.choices(
             list(self.initial_target_items), k=self.number_of_examples)

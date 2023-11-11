@@ -12,7 +12,7 @@ def write_pipeline(
     sampling_method: SamplingMethod,
 ):
     root = pathlib.Path.cwd()
-    annotated_data_dir = root / "rl" / "pipelines" / "sdss" / sampling_method
+    annotated_data_dir = root / "rl" / "pipelines" / "sdss" / "sampling" / sampling_method
     annotated_data_dir.mkdir(parents=True, exist_ok=True)
     annotated_pipeline = json.dumps(pipeline)
     annotated_pipeline_path = annotated_data_dir / f"pipeline_{filename}"
@@ -26,7 +26,7 @@ def write_target_set(
     sampling_method: SamplingMethod,
 ):
     root = pathlib.Path.cwd()
-    sampling_target_set_dir = root / "rl" / "targets" / "sdss" / sampling_method
+    sampling_target_set_dir = root / "rl" / "targets" / "sdss" / "sampling" / sampling_method
     sampling_target_set_dir.mkdir(parents=True, exist_ok=True)
     sampling_target_set = json.dumps(list(target_set))
     sampling_target_set_path = sampling_target_set_dir / \

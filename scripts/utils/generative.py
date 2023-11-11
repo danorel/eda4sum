@@ -1,3 +1,5 @@
+import gc
+import itertools
 import json
 import pathlib
 import tensorflow as tf
@@ -16,10 +18,21 @@ root = pathlib.Path.cwd()
 target_set_folder = root / "rl" / "targets" / "sdss"
 model_folder = root / "saved_models" / "sdss"
 
-def read_target_sets(target_set_type: str) -> t.Iterator[str]:
+
+def combinations(lst):
+    return list(itertools.product(*lst))
+
+
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
+def read_target_sets(sampling_folder: str = "sampling") -> t.Iterator[str]:
 
     logger.info(f"Started reading target set folder: {target_set_folder}")
-    for target_set_path in tqdm((target_set_folder / target_set_type).rglob("*.json")):
+    for target_set_path in tqdm((target_set_folder / sampling_folder).rglob("**/*.json")):
         target_set_file_path = "/".join(str(target_set_path).split("/")[-3:]).split(
             "."
         )[0]
@@ -28,22 +41,19 @@ def read_target_sets(target_set_type: str) -> t.Iterator[str]:
     logger.info(f"Finished reading target set folder: {target_set_folder}")
 
 
-def train_policies(episodes: int):
+def train_policies(episodes: int, batch_size: int = 3):
 
     modes = ["scattered", "concentrated"]
-    target_set_types = ["node_sampling"]
+    target_set_names = read_target_sets()
 
-    for mode in modes:
-        for target_set_type in target_set_types:
-            for target_set_name in read_target_sets(target_set_type):
-                logger.info(
-                    f"Started training a policy [target_set_name={target_set_name}, target_set_type={target_set_type}, mode={mode}]"
-                )
-                agent = Agent(env_name="pipeline", target_set_name=target_set_name, mode=mode)
-                agent.train(episodes)
-                logger.info(
-                    f"Finished training the policy [target_set_name={target_set_name}, target_set_type={target_set_type}, mode={mode}]"
-                )
+    for combination_chunk in chunks(combinations([modes, target_set_names]), batch_size):
+        for mode, target_set_name in combination_chunk:
+            logger.info(f"Training policy [target={target_set_name}, mode={mode}]")
+            agent = Agent(env_name="pipeline", target_set_name=target_set_name, mode=mode)
+            agent.train(episodes)
+            logger.info(f"Trained policy [target={target_set_name}, mode={mode}]")
+            del agent
+            gc.collect()
 
 
 def scan_folders(path: pathlib.Path):
