@@ -8,22 +8,34 @@ class SummaryEvaluator:
     def __init__(self, pipeline, scale_values=True, galaxy_class_scores=None) -> None:
         self.pipeline = pipeline
         self.utility_manager = pipeline.utility_manager
-        if self.pipeline.database_name == 'sdss':
+        if self.pipeline.database_name == "sdss":
             with open("galaxy_classes_mean_vectors.json") as f:
                 self.galaxy_classes = json.load(f)
-            self.galaxy_class_scores = dict.fromkeys(
-                list(self.galaxy_classes.keys()), None) if galaxy_class_scores == None else galaxy_class_scores
+            self.galaxy_class_scores = (
+                dict.fromkeys(list(self.galaxy_classes.keys()), None)
+                if galaxy_class_scores == None
+                else galaxy_class_scores
+            )
             self.best_galaxy_class_score_sets = {}
             self.galaxy_class_distances = dict.fromkeys(
-                list(self.galaxy_classes.keys()), None)
+                list(self.galaxy_classes.keys()), None
+            )
             self.best_galaxy_class_distance_sets = {}
-        elif self.pipeline.database_name == 'spotify':
+        elif self.pipeline.database_name == "spotify":
             self.genre_ratios = dict.fromkeys(
-                self.pipeline.initial_collection[f"{self.pipeline.initial_collection_names[0]}.genre"].unique(), 0)
+                self.pipeline.initial_collection[
+                    f"{self.pipeline.initial_collection_names[0]}.genre"
+                ].unique(),
+                0,
+            )
 
-        min_non_null_entropy = self.pipeline.groups[self.pipeline.groups.entropy != 0].sort_values(
-            by="entropy").iloc[0].entropy
-        max_inverted_entropy = 1/min_non_null_entropy
+        min_non_null_entropy = (
+            self.pipeline.groups[self.pipeline.groups.entropy != 0]
+            .sort_values(by="entropy")
+            .iloc[0]
+            .entropy
+        )
+        max_inverted_entropy = 1 / min_non_null_entropy
         self.max_inverted_entropy = max_inverted_entropy * 0.1
 
         self.inverted_entropy_score = 0
@@ -31,9 +43,13 @@ class SummaryEvaluator:
         self.scale_values = scale_values
         if self.scale_values:
             self.min_normalized_uniformity = self.utility_manager.normalize_uniformity(
-                self.pipeline.groups.uniformity.min())
-            self.uniformity_offset = abs(
-                self.min_normalized_uniformity) if self.min_normalized_uniformity < 0 else 0
+                self.pipeline.groups.uniformity.min()
+            )
+            self.uniformity_offset = (
+                abs(self.min_normalized_uniformity)
+                if self.min_normalized_uniformity < 0
+                else 0
+            )
         # entropies = []
         # for attribute in pipeline.exploration_columns:
         #     value_counts = self.pipeline.initial_collection[attribute].value_counts()
@@ -45,27 +61,42 @@ class SummaryEvaluator:
             dataset_scores = {}
             dataset_distances = {}
 
-            set_uniformity = self.utility_manager.normalize_uniformity(
-                dataset.uniformity) + self.uniformity_offset if self.scale_values else dataset.uniformity
-            if self.pipeline.database_name == 'sdss':
+            set_uniformity = (
+                self.utility_manager.normalize_uniformity(dataset.uniformity)
+                + self.uniformity_offset
+                if self.scale_values
+                else dataset.uniformity
+            )
+            if self.pipeline.database_name == "sdss":
                 for g_class, galaxy_class_score in self.galaxy_class_scores.items():
                     set_distance = cityblock(
-                        dataset.means_vector, self.galaxy_classes[g_class])/len(dataset.means_vector)
-                    set_score = set_uniformity/set_distance
+                        dataset.means_vector, self.galaxy_classes[g_class]
+                    ) / len(dataset.means_vector)
+                    set_score = set_uniformity / set_distance
                     if galaxy_class_score == None or set_score > galaxy_class_score:
                         self.galaxy_class_scores[g_class] = set_score
                         self.best_galaxy_class_score_sets[g_class] = dataset
-                    if self.galaxy_class_distances[g_class] == None or set_distance < self.galaxy_class_distances[g_class]:
+                    if (
+                        self.galaxy_class_distances[g_class] == None
+                        or set_distance < self.galaxy_class_distances[g_class]
+                    ):
                         self.galaxy_class_distances[g_class] = set_distance
                         self.best_galaxy_class_distance_sets[g_class] = dataset
-            elif self.pipeline.database_name == 'spotify':
+            elif self.pipeline.database_name == "spotify":
                 for genre, genre_best_ratio in self.genre_ratios.items():
                     genre_ratio = len(
-                        dataset.data[dataset.data[f"{self.pipeline.initial_collection_names[0]}.genre"] == genre])/len(dataset.data)
+                        dataset.data[
+                            dataset.data[
+                                f"{self.pipeline.initial_collection_names[0]}.genre"
+                            ]
+                            == genre
+                        ]
+                    ) / len(dataset.data)
                     if genre_ratio > genre_best_ratio:
 
                         print(
-                            f"new best for {genre} {genre_best_ratio} => {genre_ratio}")
+                            f"new best for {genre} {genre_best_ratio} => {genre_ratio}"
+                        )
                         self.genre_ratios[genre] = genre_ratio
             #     dataset_scores[g_class] = set_score
             #     dataset_distances[g_class] = set_distance
@@ -87,7 +118,7 @@ class SummaryEvaluator:
                     self.inverted_entropy_score += 1 / dataset.entropy
 
     def get_evaluation_scores(self):
-        if self.pipeline.database_name == 'sdss':
+        if self.pipeline.database_name == "sdss":
             return {
                 "galaxy_class_score": self.get_mean_score(),
                 "class_score_found_12": self.get_found_class_score_count(12),
@@ -108,7 +139,7 @@ class SummaryEvaluator:
             # "class_score_found_4": self.summary_evaluator.get_found_class_score_count(4),
             # "class_score_found_5": self.summary_evaluator.get_found_class_score_count(5),
             # "class_score_found_8": self.summary_evaluator.get_found_class_score_count(8),
-        elif self.pipeline.database_name == 'spotify':
+        elif self.pipeline.database_name == "spotify":
             return {
                 "genre_mean_ratio": self.get_mean_score(),
                 "found_genre_10": self.get_found_genre_count(0.1),
@@ -124,10 +155,12 @@ class SummaryEvaluator:
             }
 
     def get_mean_score(self):
-        if self.pipeline.database_name == 'sdss':
-            return sum(self.galaxy_class_scores.values())/len(self.galaxy_class_scores)
-        elif self.pipeline.database_name == 'spotify':
-            return sum(self.genre_ratios.values())/len(self.genre_ratios)
+        if self.pipeline.database_name == "sdss":
+            return sum(self.galaxy_class_scores.values()) / len(
+                self.galaxy_class_scores
+            )
+        elif self.pipeline.database_name == "spotify":
+            return sum(self.genre_ratios.values()) / len(self.genre_ratios)
 
     def get_found_genre_count(self, threshold):
         counter = 0
@@ -140,13 +173,15 @@ class SummaryEvaluator:
         return self.inverted_entropy_score
 
     def get_galaxy_class_mean_distance(self):
-        if self.pipeline.database_name == 'sdss':
-            return sum(self.galaxy_class_distances.values())/len(self.galaxy_class_distances)
+        if self.pipeline.database_name == "sdss":
+            return sum(self.galaxy_class_distances.values()) / len(
+                self.galaxy_class_distances
+            )
         else:
             return 0
 
     def get_found_class_distance_count(self, threshold):
-        if self.pipeline.database_name == 'sdss':
+        if self.pipeline.database_name == "sdss":
             counter = 0
             for distance in self.galaxy_class_distances.values():
                 if distance < threshold:
@@ -156,7 +191,7 @@ class SummaryEvaluator:
             return 0
 
     def get_found_class_score_count(self, threshold):
-        if self.pipeline.database_name == 'sdss':
+        if self.pipeline.database_name == "sdss":
             counter = 0
             for distance in self.galaxy_class_scores.values():
                 if distance > threshold:

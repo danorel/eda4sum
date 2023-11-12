@@ -23,11 +23,12 @@ class loggable_operator(object):
                             "operator": f.__name__,
                             "start_time": startTime.timestamp(),
                             "duration": (datetime.now() - startTime).total_seconds(),
-                            "peak_memory_usage": mem_thread.result()
+                            "peak_memory_usage": mem_thread.result(),
                         }
                         kwargs["logger"].append_log(log_data)
             else:
                 return f(*args, **kwargs)
+
         return wrapped_f
 
 
@@ -51,11 +52,16 @@ class Logger:
         self.current_log_level = self.log_levels_stack.pop()
         running_log = self.current_log_level[-1]
         running_log.update(additional_log_data)
-        running_log["duration"] = (datetime.now(
-        ) - datetime.fromtimestamp(running_log["start_time"])).total_seconds()
+        running_log["duration"] = (
+            datetime.now() - datetime.fromtimestamp(running_log["start_time"])
+        ).total_seconds()
 
     def write_log(self, file_name=None):
-        file_name = f"./log/log_{datetime.now().strftime('%d-%m-%y-%H:%M:%S')}.json" if file_name == None else file_name
+        file_name = (
+            f"./log/log_{datetime.now().strftime('%d-%m-%y-%H:%M:%S')}.json"
+            if file_name == None
+            else file_name
+        )
         with open(file_name, "w") as log_file:
             json.dump(self.log_stack, log_file, indent=2)
 

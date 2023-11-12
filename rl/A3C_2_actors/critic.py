@@ -21,14 +21,16 @@ class Critic:
         # self.global_opt_weight = None
 
     def create_model(self):
-        return tf.keras.Sequential([
-            Input((self.steps, self.state_dim)),
-            Dense(1024, activation='relu'),
-            Dense(1024, activation='relu'),
-            Dense(512, activation='relu'),
-            LSTM(512, return_sequences=False),
-            Dense(1, activation='linear')
-        ])
+        return tf.keras.Sequential(
+            [
+                Input((self.steps, self.state_dim)),
+                Dense(1024, activation="relu"),
+                Dense(1024, activation="relu"),
+                Dense(512, activation="relu"),
+                LSTM(512, return_sequences=False),
+                Dense(1, activation="linear"),
+            ]
+        )
 
     def compute_loss(self, v_pred, td_targets):
         mse = tf.keras.losses.MeanSquaredError()
@@ -40,8 +42,7 @@ class Critic:
             assert v_pred.shape == td_targets.shape
             loss = self.compute_loss(v_pred, tf.stop_gradient(td_targets))
             grads = tape.gradient(loss, self.model.trainable_variables)
-            self.opt.apply_gradients(
-                zip(grads, self.model.trainable_variables))
+            self.opt.apply_gradients(zip(grads, self.model.trainable_variables))
         return loss
 
     def save_model(self, name=None, step=None):

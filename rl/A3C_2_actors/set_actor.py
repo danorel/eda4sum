@@ -23,33 +23,32 @@ class SetActor:
         # self.global_opt_weight = None
 
     def create_model(self):
-        return tf.keras.Sequential([
-            Input((self.steps, self.state_dim)),
-            Dense(1024, activation='relu'),
-            Dense(1024, activation='relu'),
-            LSTM(1024, return_sequences=False),
-            Dense(self.action_dim, activation='softmax')
-        ])
+        return tf.keras.Sequential(
+            [
+                Input((self.steps, self.state_dim)),
+                Dense(1024, activation="relu"),
+                Dense(1024, activation="relu"),
+                LSTM(1024, return_sequences=False),
+                Dense(self.action_dim, activation="softmax"),
+            ]
+        )
 
     def compute_loss(self, actions, logits, advantages):
-        ce_loss = tf.keras.losses.SparseCategoricalCrossentropy(
-            from_logits=True)
-        entropy_loss = tf.keras.losses.CategoricalCrossentropy(
-            from_logits=True)
+        ce_loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+        entropy_loss = tf.keras.losses.CategoricalCrossentropy(from_logits=True)
         actions = tf.cast(actions, tf.int32)
         policy_loss = ce_loss(
-            actions, logits, sample_weight=tf.stop_gradient(advantages))
+            actions, logits, sample_weight=tf.stop_gradient(advantages)
+        )
         entropy = entropy_loss(logits, logits)
         return policy_loss - self.entropy_beta * entropy
 
     def train(self, states, actions, advantages):
         with tf.GradientTape() as tape:
             logits = self.model(states, training=True)
-            loss = self.compute_loss(
-                actions, logits, advantages)
+            loss = self.compute_loss(actions, logits, advantages)
             grads = tape.gradient(loss, self.model.trainable_variables)
-            self.opt.apply_gradients(
-                zip(grads, self.model.trainable_variables))
+            self.opt.apply_gradients(zip(grads, self.model.trainable_variables))
         return loss
 
     def save_model(self, name=None, step=None):

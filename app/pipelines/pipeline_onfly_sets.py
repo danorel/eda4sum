@@ -11,8 +11,9 @@ from .predicateitem import PredicateItem
 
 class PipelineWithOnFlySets(Pipeline):
     def __init__(self, database_name, initial_collection_names, data_folder="./data"):
-        Pipeline.__init__(self, database_name,
-                          initial_collection_names, data_folder=data_folder)
+        Pipeline.__init__(
+            self, database_name, initial_collection_names, data_folder=data_folder
+        )
 
     def by_superset(self, dataset: Dataset, set_ids_to_ignore=[]):
         if len(dataset.predicate.components) == 0:
@@ -25,15 +26,17 @@ class PipelineWithOnFlySets(Pipeline):
             new_set = None
             predicate_attributes = dataset.predicate.get_attributes()
             if len(predicate_attributes) == 1:
-                raise Exception(
-                    "Superset impossible, only one attribute is filtered")
+                raise Exception("Superset impossible, only one attribute is filtered")
             else:
                 for attribute in predicate_attributes:
-                    new_dataset = Dataset(predicate=copy.deepcopy(
-                        dataset.predicate), joins=copy.deepcopy(dataset.joins))
+                    new_dataset = Dataset(
+                        predicate=copy.deepcopy(dataset.predicate),
+                        joins=copy.deepcopy(dataset.joins),
+                    )
                     new_dataset.predicate.remove_attribute(attribute)
                     self.reload_set_data(
-                        new_dataset, apply_joins=True, apply_predicate=True)
+                        new_dataset, apply_joins=True, apply_predicate=True
+                    )
                     new_count = len(new_dataset.data)
                     # if new_count == original_count:
                     #     dataset.predicate = new_predicate
@@ -46,44 +49,78 @@ class PipelineWithOnFlySets(Pipeline):
                 print(f"New set predicate: {str(new_set.predicate)}")
                 return new_set
 
-#         Boucler sur la structure de données, et à chaque fois enlever un attribut/valeur, lancer la requête sur D, et garder à chaque fois le plus petit D généré.
-# Si A est donné, construire un prédicat avec les valeurs de A et l’attribut le plus sélectif, le lancer sur D.
+    #         Boucler sur la structure de données, et à chaque fois enlever un attribut/valeur, lancer la requête sur D, et garder à chaque fois le plus petit D généré.
+    # Si A est donné, construire un prédicat avec les valeurs de A et l’attribut le plus sélectif, le lancer sur D.
 
-    def by_overlap(self, dataset, number_of_groups=3, max_seconds=1, return_datasets=True, logger=None):
+    def by_overlap(
+        self,
+        dataset,
+        number_of_groups=3,
+        max_seconds=1,
+        return_datasets=True,
+        logger=None,
+    ):
         startTime = datetime.now()
         current_set = set(dataset.data[dataset.data.columns[0]])
         set_selectivity_list = pd.DataFrame(
-            columns=['attribute1', 'value1', 'attribute2', 'value2', 'attribute3', 'value3'])
+            columns=[
+                "attribute1",
+                "value1",
+                "attribute2",
+                "value2",
+                "attribute3",
+                "value3",
+            ]
+        )
         # , 'attribute4', 'value4', 'attribute5', 'value5', 'selectivity']
         interesting_attributes = self.find_interesting_attributes(
-            dataset.data, count=10)
+            dataset.data, count=10
+        )
         second_attributes = interesting_attributes.copy()
         for attribute in interesting_attributes:
-            values = dataset.data.loc[:, attribute].value_counts(
-                normalize=True, dropna=False).to_frame().reset_index()
+            values = (
+                dataset.data.loc[:, attribute]
+                .value_counts(normalize=True, dropna=False)
+                .to_frame()
+                .reset_index()
+            )
             values.rename(
-                columns={attribute: 'selectivity', 'index': 'value1'}, inplace=True)
+                columns={attribute: "selectivity", "index": "value1"}, inplace=True
+            )
             if len(values) == 0:
                 second_attributes.remove(attribute)
             else:
-                values.loc[:, 'attribute1'] = attribute
+                values.loc[:, "attribute1"] = attribute
                 set_selectivity_list = set_selectivity_list.append(
-                    values, ignore_index=True, sort=False)
+                    values, ignore_index=True, sort=False
+                )
                 # groups of two attributes
                 second_attributes.remove(attribute)
                 third_attributes = second_attributes.copy()
                 for second_attribute in second_attributes:
-                    groups = dataset.data.groupby(by=[attribute, second_attribute], sort=False, observed=True).size(
-                    ).reset_index().rename(columns={0: 'selectivity', attribute: "value1", second_attribute: "value2"})
+                    groups = (
+                        dataset.data.groupby(
+                            by=[attribute, second_attribute], sort=False, observed=True
+                        )
+                        .size()
+                        .reset_index()
+                        .rename(
+                            columns={
+                                0: "selectivity",
+                                attribute: "value1",
+                                second_attribute: "value2",
+                            }
+                        )
+                    )
                     if len(groups) == 0:
                         third_attributes.remove(second_attribute)
                     else:
-                        groups.loc[:, 'attribute1'] = attribute
-                        groups.loc[:, 'attribute2'] = second_attribute
-                        groups.selectivity = groups.selectivity / \
-                            len(dataset.data)
+                        groups.loc[:, "attribute1"] = attribute
+                        groups.loc[:, "attribute2"] = second_attribute
+                        groups.selectivity = groups.selectivity / len(dataset.data)
                         set_selectivity_list = set_selectivity_list.append(
-                            groups, ignore_index=True, sort=False)
+                            groups, ignore_index=True, sort=False
+                        )
                         # third_attributes.remove(second_attribute)
                         # # fourth_attributes = third_attributes.copy()
                         # for third_attribute in third_attributes:
@@ -124,8 +161,9 @@ class PipelineWithOnFlySets(Pipeline):
                     #         set_selectivity_list = set_selectivity_list.append(
                     #             groups, ignore_index=True, sort=False)
 
-        set_selectivity_list = set_selectivity_list[set_selectivity_list.selectivity != 0].sort_values(
-            by="selectivity")
+        set_selectivity_list = set_selectivity_list[
+            set_selectivity_list.selectivity != 0
+        ].sort_values(by="selectivity")
 
         # selection of the k first sets
         item_sets = {}
@@ -147,16 +185,41 @@ class PipelineWithOnFlySets(Pipeline):
             # el
             if type(set_selectivity.attribute3) == str:
                 selectivity_set = set(
-                    self.initial_collection[(self.initial_collection[set_selectivity.attribute1] == set_selectivity.value1) &
-                                            (self.initial_collection[set_selectivity.attribute2] == set_selectivity.value2) &
-                                            (self.initial_collection[set_selectivity.attribute3] == set_selectivity.value3)][dataset.data.columns[0]])
+                    self.initial_collection[
+                        (
+                            self.initial_collection[set_selectivity.attribute1]
+                            == set_selectivity.value1
+                        )
+                        & (
+                            self.initial_collection[set_selectivity.attribute2]
+                            == set_selectivity.value2
+                        )
+                        & (
+                            self.initial_collection[set_selectivity.attribute3]
+                            == set_selectivity.value3
+                        )
+                    ][dataset.data.columns[0]]
+                )
             elif type(set_selectivity.attribute2) == str:
                 selectivity_set = set(
-                    self.initial_collection[(self.initial_collection[set_selectivity.attribute1] == set_selectivity.value1) &
-                                            (self.initial_collection[set_selectivity.attribute2] == set_selectivity.value2)][dataset.data.columns[0]])
+                    self.initial_collection[
+                        (
+                            self.initial_collection[set_selectivity.attribute1]
+                            == set_selectivity.value1
+                        )
+                        & (
+                            self.initial_collection[set_selectivity.attribute2]
+                            == set_selectivity.value2
+                        )
+                    ][dataset.data.columns[0]]
+                )
             else:
                 selectivity_set = set(
-                    self.initial_collection[self.initial_collection[set_selectivity.attribute1] == set_selectivity.value1][dataset.data.columns[0]])
+                    self.initial_collection[
+                        self.initial_collection[set_selectivity.attribute1]
+                        == set_selectivity.value1
+                    ][dataset.data.columns[0]]
+                )
             if len(selectivity_set) >= 10:
                 item_sets[index] = selectivity_set
                 selected_set_selectivity_ids.append(index)
@@ -168,13 +231,13 @@ class PipelineWithOnFlySets(Pipeline):
         for id in selected_set_selectivity_ids:
             set_to_calculate = item_sets[id]
             sets_overlap_to_current_set[id] = self.calculate_overlap(
-                current_set, set_to_calculate)
+                current_set, set_to_calculate
+            )
             overlap = 0
             for other_id in selected_set_selectivity_ids:
                 if other_id != id:
                     other_set = item_sets[other_id]
-                    overlap += self.calculate_overlap(
-                        set_to_calculate, other_set)
+                    overlap += self.calculate_overlap(set_to_calculate, other_set)
             sets_overlap[id] = overlap
         # print(attribute_value_overlaps)
         sets_counter = 0
@@ -198,22 +261,48 @@ class PipelineWithOnFlySets(Pipeline):
                 # el
                 if type(set_selectivity.attribute3) == str:
                     new_set = set(
-                        self.initial_collection[(self.initial_collection[set_selectivity.attribute1] == set_selectivity.value1) &
-                                                (self.initial_collection[set_selectivity.attribute2] == set_selectivity.value2) &
-                                                (self.initial_collection[set_selectivity.attribute3] == set_selectivity.value3)][dataset.data.columns[0]])
+                        self.initial_collection[
+                            (
+                                self.initial_collection[set_selectivity.attribute1]
+                                == set_selectivity.value1
+                            )
+                            & (
+                                self.initial_collection[set_selectivity.attribute2]
+                                == set_selectivity.value2
+                            )
+                            & (
+                                self.initial_collection[set_selectivity.attribute3]
+                                == set_selectivity.value3
+                            )
+                        ][dataset.data.columns[0]]
+                    )
                 elif type(set_selectivity.attribute2) == str:
                     new_set = set(
-                        self.initial_collection[(self.initial_collection[set_selectivity.attribute1] == set_selectivity.value1) &
-                                                (self.initial_collection[set_selectivity.attribute2] == set_selectivity.value2)][dataset.data.columns[0]])
+                        self.initial_collection[
+                            (
+                                self.initial_collection[set_selectivity.attribute1]
+                                == set_selectivity.value1
+                            )
+                            & (
+                                self.initial_collection[set_selectivity.attribute2]
+                                == set_selectivity.value2
+                            )
+                        ][dataset.data.columns[0]]
+                    )
                 else:
                     new_set = set(
-                        self.initial_collection[self.initial_collection[set_selectivity.attribute1] == set_selectivity.value1][dataset.data.columns[0]])
+                        self.initial_collection[
+                            self.initial_collection[set_selectivity.attribute1]
+                            == set_selectivity.value1
+                        ][dataset.data.columns[0]]
+                    )
                 if (datetime.now() - startTime).total_seconds() > max_seconds:
                     break
                 if len(new_set) >= 10:
                     item_sets[index] = new_set
                     sets_overlap_to_current_set[index] = self.calculate_overlap(
-                        current_set, new_set)
+                        current_set, new_set
+                    )
                     if sets_overlap_to_current_set[index] > 0.1:
                         break
                     sets_counter += 1
@@ -222,13 +311,23 @@ class PipelineWithOnFlySets(Pipeline):
                         for other_id in selected_set_selectivity_ids:
                             if other_id != id_to_replace:
                                 overlap_if_replaced += self.calculate_overlap(
-                                    new_set, item_sets[other_id])
+                                    new_set, item_sets[other_id]
+                                )
 
-                        if (overlap_if_replaced < sets_overlap[id_to_replace]) or ((overlap_if_replaced == sets_overlap[id_to_replace]) and
-                                                                                   (sets_overlap_to_current_set[index] < sets_overlap_to_current_set[id_to_replace])):
+                        if (overlap_if_replaced < sets_overlap[id_to_replace]) or (
+                            (overlap_if_replaced == sets_overlap[id_to_replace])
+                            and (
+                                sets_overlap_to_current_set[index]
+                                < sets_overlap_to_current_set[id_to_replace]
+                            )
+                        ):
                             set_replacements_counter += 1
-                            if ((overlap_if_replaced == sets_overlap[id_to_replace]) and
-                                    (sets_overlap_to_current_set[index] < sets_overlap_to_current_set[id_to_replace])):
+                            if (
+                                overlap_if_replaced == sets_overlap[id_to_replace]
+                            ) and (
+                                sets_overlap_to_current_set[index]
+                                < sets_overlap_to_current_set[id_to_replace]
+                            ):
                                 sets_replaced_by_overlap_to_s += 1
                             selected_set_selectivity_ids.remove(id_to_replace)
                             selected_set_selectivity_ids.append(index)
@@ -237,7 +336,8 @@ class PipelineWithOnFlySets(Pipeline):
                             break
 
         print(
-            f"sets studied: {sets_counter} time spent: {(datetime.now() - startTime).total_seconds()}s sets replaced:{set_replacements_counter} replacement by overlap to S: {sets_replaced_by_overlap_to_s}")
+            f"sets studied: {sets_counter} time spent: {(datetime.now() - startTime).total_seconds()}s sets replaced:{set_replacements_counter} replacement by overlap to S: {sets_replaced_by_overlap_to_s}"
+        )
 
         for id in selected_set_selectivity_ids:
             set_selectivity = set_selectivity_list.loc[id]
@@ -251,22 +351,46 @@ class PipelineWithOnFlySets(Pipeline):
             elif type(set_selectivity.attribute2) == str:
                 definition_string = f"{set_selectivity.attribute1}={set_selectivity.value1} {set_selectivity.attribute2}={set_selectivity.value2}"
             else:
-                definition_string = f"{set_selectivity.attribute1}={set_selectivity.value1}"
+                definition_string = (
+                    f"{set_selectivity.attribute1}={set_selectivity.value1}"
+                )
             definition_string += f"   overlap to original set: {sets_overlap_to_current_set[id]:.4f}   overlap to other sets: {sets_overlap[id]:.4f}   items:{len(item_sets[id])}"
             print(definition_string)
         results = []
-        for index, set_selectivity in set_selectivity_list.loc[selected_set_selectivity_ids].iterrows():
+        for index, set_selectivity in set_selectivity_list.loc[
+            selected_set_selectivity_ids
+        ].iterrows():
             new_set = Dataset(joins=copy.deepcopy(dataset.joins))
-            new_set.predicate.append(PredicateItem(set_selectivity.attribute1, "==", set_selectivity.value1, is_category=str(
-                dataset.data[set_selectivity.attribute1].dtype) == "category"))
+            new_set.predicate.append(
+                PredicateItem(
+                    set_selectivity.attribute1,
+                    "==",
+                    set_selectivity.value1,
+                    is_category=str(dataset.data[set_selectivity.attribute1].dtype)
+                    == "category",
+                )
+            )
             if type(set_selectivity.attribute2) == str:
-                new_set.predicate.append(PredicateItem(set_selectivity.attribute2, "==", set_selectivity.value2, is_category=str(
-                    dataset.data[set_selectivity.attribute2].dtype) == "category"))
+                new_set.predicate.append(
+                    PredicateItem(
+                        set_selectivity.attribute2,
+                        "==",
+                        set_selectivity.value2,
+                        is_category=str(dataset.data[set_selectivity.attribute2].dtype)
+                        == "category",
+                    )
+                )
             if type(set_selectivity.attribute3) == str:
-                new_set.predicate.append(PredicateItem(set_selectivity.attribute3, "==", set_selectivity.value3, is_category=str(
-                    dataset.data[set_selectivity.attribute3].dtype) == "category"))
-            self.reload_set_data(new_set, apply_joins=True,
-                                 apply_predicate=True)
+                new_set.predicate.append(
+                    PredicateItem(
+                        set_selectivity.attribute3,
+                        "==",
+                        set_selectivity.value3,
+                        is_category=str(dataset.data[set_selectivity.attribute3].dtype)
+                        == "category",
+                    )
+                )
+            self.reload_set_data(new_set, apply_joins=True, apply_predicate=True)
             results.append(new_set)
             # if type(set_selectivity.attribute4) == str:
             #     new_set.predicate.append(PredicateItem(set_selectivity.attribute4, "==", set_selectivity.value4, is_category=str(
@@ -281,6 +405,7 @@ class PipelineWithOnFlySets(Pipeline):
         #     print(
         #         f"Overlap to current set: {attribute_value_overlaps_to_current_set[id]:.4f}")
         #     print(f"overlap to other sets: {attribute_value_overlaps[id]:.4f}")
+
 
 #         Pour les sets à la volée, il s’agit de savoir quels prédicats évaluer. S est accompagné d’une structure de données au format (attribut,valeur,%) et triée par
 # ordre décroissant de sélectivité (de moins en moins sélectif).

@@ -5,51 +5,69 @@ import typing as t
 
 from tqdm import tqdm
 
-from data_types.pipeline import PipelineBodyItem, PipelineHead
+from data_types.pipeline import Pipeline, PipelineType, PipelineKind
 from data_types.sampling import SamplingMethod
 from utils.debugging import logger
 
 
-def read_pipelines() -> t.Iterator[
-    t.Tuple[str, PipelineHead, t.List[PipelineBodyItem]]
-]:
+def read_pipelines(
+    sampling_method: SamplingMethod, 
+    pipeline_type: PipelineType = "eda4sum", 
+    pipeline_kind: PipelineKind = "raw"
+) -> t.Iterator[t.Tuple[str, Pipeline]]:
     root = pathlib.Path.cwd()
-    pipeline_dir = root / "rl" / "pipelines"
-    logger.info("Starting reading pipelines...")
+    pipeline_dir = (
+        root 
+        / "rl" 
+        / "pipelines"
+        / "sdss"
+        / "sampling"
+        / sampling_method
+        / pipeline_type
+        / pipeline_kind
+    )
+    logger.info(f"starting reading pipelines folder: {pipeline_dir}")
     for pipeline_path in tqdm(pipeline_dir.rglob("*.json")):
-        pipeline_file = pathlib.Path(pipeline_path)
         filename, pipeline = (
-            pipeline_file.name.split("_")[1],
-            json.loads(pipeline_file.read_text()),
+            '_'.join(pipeline_path.name.split("_")[1:]),
+            json.loads(pipeline_path.read_text()),
         )
-        pipeline_head, *pipeline_body = pipeline
-        yield filename, pipeline_head, pipeline_body
-    logger.info("Finished reading pipelines...")
+        yield filename, pipeline
+    logger.info(f"finished reading pipelines folder: {pipeline_dir}")
 
 
-def read_target_sets(sampling_method: SamplingMethod) -> t.Iterator[t.Set[str]]:
+def read_target_set_names(sampling_method: SamplingMethod) -> t.Iterator[t.Set[str]]:
     root = pathlib.Path.cwd()
-    target_set_dir = root / "rl" / "targets" / sampling_method
-    logger.info("Starting reading target sets...")
-    for target_set_path in tqdm(target_set_dir.rglob("*.json")):
-        target_set_file = pathlib.Path(target_set_path)
-        yield set(json.loads(target_set_file.read_text()))
-    logger.info("Finished reading target sets...")
+    target_set_dir = (
+        root 
+        / "rl" 
+        / "targets"
+        / "sdss"
+        / "sampling"
+        / sampling_method
+    )
+    logger.info(f"started reading target set folder: {target_set_dir}")
+    for target_set_path in tqdm(target_set_dir.rglob("**/*.json")):
+        target_set_subpath = str(target_set_path).split("/")[-3:]
+        target_set_file_path = "/".join(target_set_subpath).split(".")[0]
+        logger.info(f"found target set: {target_set_file_path}")
+        yield target_set_file_path
+    logger.info(f"finished reading target set folder: {target_set_dir}")
 
 
 def read_definitions() -> pd.DataFrame:
     root = pathlib.Path.cwd()
     definitions_path = root / "app" / "data" / "sdss" / "galaxies_index" / "groups.csv"
-    logger.info("Starting reading definitions...")
+    logger.info("Starting reading definitions.csv...")
     definitions_df = pd.read_csv(definitions_path)
-    logger.info("Finished reading definitions...")
+    logger.info("Finished reading definitions.csv...")
     return definitions_df
 
 
 def read_members() -> pd.DataFrame:
     root = pathlib.Path.cwd()
     members = root / "app" / "data" / "sdss" / "galaxies_100000_index" / "groups.csv"
-    logger.info("Starting reading members...")
+    logger.info("Starting reading members.csv...")
     members_df = pd.read_csv(members)
-    logger.info("Finished reading members...")
+    logger.info("Finished reading members.csv...")
     return members_df

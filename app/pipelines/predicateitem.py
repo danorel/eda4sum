@@ -3,10 +3,16 @@ import pandas as pd
 
 
 class PredicateItem:
-    def __init__(self, attribute: str, operator: str, value: Union[str, int, float, pd.Interval], is_category=False):
+    def __init__(
+        self,
+        attribute: str,
+        operator: str,
+        value: Union[str, int, float, pd.Interval],
+        is_category=False,
+    ):
         self.attribute = attribute
         self.operator = operator
-        self.is_multiple_line_string = type(value) == str and '\n' in value
+        self.is_multiple_line_string = type(value) == str and "\n" in value
         self.value = value
         self.is_category = is_category
 
@@ -22,7 +28,11 @@ class PredicateItem:
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self.attribute == other.attribute and self.operator == other.operator and self.value == other.value
+            return (
+                self.attribute == other.attribute
+                and self.operator == other.operator
+                and self.value == other.value
+            )
         else:
             return False
 
@@ -35,8 +45,7 @@ class PredicateItem:
     def to_sql(self):
         if self.is_category:
             if type(self.value) == str:
-                interval = self.value.replace(
-                    "(", "").replace("]", "").split(", ")
+                interval = self.value.replace("(", "").replace("]", "").split(", ")
                 return f"{self.attribute} > {interval[0]} and {self.attribute} <= {interval[1]}"
             else:
                 if isinstance(self.value.left, pd.Timestamp):
@@ -45,8 +54,7 @@ class PredicateItem:
                     return f"{self.attribute} > {self.value.left} and {self.attribute} <= {self.value.right}"
         else:
             operator = "=" if self.operator == "==" else self.operator
-            value = f"'{self.value}'" if type(
-                self.value) == str else self.value
+            value = f"'{self.value}'" if type(self.value) == str else self.value
             return f"{self.attribute} {operator} {value}"
 
 
@@ -65,14 +73,19 @@ class PredicateItemGroup:
 
     def __str__(self):
         components = filter(
-            lambda component: not component.is_multiple_line_string, self.components)
+            lambda component: not component.is_multiple_line_string, self.components
+        )
         return f"({self.logical_operator.join(map(lambda component: str(component), components))})"
 
     def to_sql(self):
         if self.logical_operator == "&":
-            return f" and ".join(map(lambda component: component.to_sql(), self.components))
+            return f" and ".join(
+                map(lambda component: component.to_sql(), self.components)
+            )
         else:
-            return f" or ".join(map(lambda component: component.to_sql(), self.components))
+            return f" or ".join(
+                map(lambda component: component.to_sql(), self.components)
+            )
 
     def get_attributes(self):
         attributes = []
@@ -93,12 +106,19 @@ class PredicateItemGroup:
 
     def is_empty(self):
         return len(self.components) == 0
-    
+
     def get_filter_values(self, attribute):
         return [x.value for x in self.components if x.attribute == attribute]
 
+
 class JoinParameters:
-    def __init__(self, target_collection_name: str, left_attribute: str, right_attribute: str, other_collection: str = ""):
+    def __init__(
+        self,
+        target_collection_name: str,
+        left_attribute: str,
+        right_attribute: str,
+        other_collection: str = "",
+    ):
         self.target_collection_name = target_collection_name
         self.other_collection = other_collection
         self.left_attribute = left_attribute

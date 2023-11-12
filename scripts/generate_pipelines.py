@@ -1,3 +1,0 @@
-from scripts.utils.all_inclusive import generate_pipelines_from_policies
-
-generate_pipelines_from_policies(min_pipeline_size=3, max_pipeline_size=10)

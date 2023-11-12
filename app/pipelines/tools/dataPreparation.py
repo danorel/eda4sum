@@ -20,8 +20,9 @@ from multiprocessing.managers import SharedMemoryManager
 
 def get_thread_boundaries(number_of_sets, number_of_threads):
     boundaries = []
-    iterations_per_thread = number_of_sets * \
-        (number_of_sets - 1) / 2 / number_of_threads
+    iterations_per_thread = (
+        number_of_sets * (number_of_sets - 1) / 2 / number_of_threads
+    )
     set_counter = 0
     iterations_counter = 0
     while len(boundaries) < number_of_threads - 1:
@@ -34,12 +35,14 @@ def get_thread_boundaries(number_of_sets, number_of_threads):
     return boundaries
 
 
-def selectivity_thread_function(step, id_attribute_name, manager_dict, group_count, threadNumber):
+def selectivity_thread_function(
+    step, id_attribute_name, manager_dict, group_count, threadNumber
+):
     start_index = threadNumber * step
     if (threadNumber + 2) * step > group_count:
         end_index = group_count
     else:
-        end_index = (threadNumber+1) * step
+        end_index = (threadNumber + 1) * step
     if start_index != end_index:
         groups = manager_dict["groups"]
         pipeline = manager_dict["pipeline"]
@@ -50,25 +53,27 @@ def selectivity_thread_function(step, id_attribute_name, manager_dict, group_cou
         for set_id, group in groups[start_index:end_index].iterrows():
             # group_members_set = eval(group.members)
             group_members_set = group.members
-            group_df = pipeline.initial_collection[pipeline.initial_collection[id_attribute_name].isin(
-                group_members_set)]
+            group_df = pipeline.initial_collection[
+                pipeline.initial_collection[id_attribute_name].isin(group_members_set)
+            ]
             for attribute in pipeline.interesting_attributes:
                 values = group_df.loc[:, attribute].value_counts(
-                    normalize=True, dropna=False)
+                    normalize=True, dropna=False
+                )
                 for value, selectivity in values.iteritems():
                     try:
                         if type(value) == str:
-                            value = value.replace(
-                                '/', Pipeline.SLASH_ESCAPER)
+                            value = value.replace("/", Pipeline.SLASH_ESCAPER)
                         if selectivity != 0.0:
                             key = f"{attribute}={value}"
                             if not key in selectivities:
-                                selectivities[key] = {"set_id": [
-                                    set_id], "selectivity": [selectivity]}
+                                selectivities[key] = {
+                                    "set_id": [set_id],
+                                    "selectivity": [selectivity],
+                                }
                             else:
                                 selectivities[key]["set_id"].append(set_id)
-                                selectivities[key]["selectivity"].append(
-                                    selectivity)
+                                selectivities[key]["selectivity"].append(selectivity)
                     except TypeError:
                         print(f"TypeError: {value}")
         return selectivities
@@ -76,11 +81,9 @@ def selectivity_thread_function(step, id_attribute_name, manager_dict, group_cou
 
 def index_thread_second_apply(group1, group2, overlaps):
     if group1.name != group2.name:
-        intersection = len(
-            group1 & group2)
+        intersection = len(group1 & group2)
         if intersection:
-            overlap_value = intersection / \
-                len(group1 | group2)
+            overlap_value = intersection / len(group1 | group2)
             overlaps["set_1"].append(group1.name)
             overlaps["set_2"].append(group2.name)
             overlaps["overlap"].append(overlap_value)
@@ -88,9 +91,11 @@ def index_thread_second_apply(group1, group2, overlaps):
 
 def index_thread_first_apply(group1, groups, threadNumber, start_index, overlaps):
     print(
-        f"n{threadNumber} index {group1.name-start_index} {datetime.now().strftime('%H:%M:%S')} resLen {len(overlaps['set_1'])}")
-    groups.apply(lambda group2: index_thread_second_apply(
-        group1, group2, overlaps), axis=1)
+        f"n{threadNumber} index {group1.name-start_index} {datetime.now().strftime('%H:%M:%S')} resLen {len(overlaps['set_1'])}"
+    )
+    groups.apply(
+        lambda group2: index_thread_second_apply(group1, group2, overlaps), axis=1
+    )
 
 
 # def index_thread_function(id_attribute_name, manager_dict, threadNumber, thread_boundaries):
@@ -111,8 +116,11 @@ def index_thread_first_apply(group1, groups, threadNumber, start_index, overlaps
 
 #     return overlaps
 
-def index_thread_function(id_attribute_name, manager_dict, threadNumber, thread_boundaries, temp_folder):
-    start_index = 0 if threadNumber == 0 else thread_boundaries[threadNumber-1]
+
+def index_thread_function(
+    id_attribute_name, manager_dict, threadNumber, thread_boundaries, temp_folder
+):
+    start_index = 0 if threadNumber == 0 else thread_boundaries[threadNumber - 1]
     end_index = thread_boundaries[threadNumber]
     groups = manager_dict["groups"]
     print(f"started n{threadNumber} {start_index} {end_index}")
@@ -121,32 +129,38 @@ def index_thread_function(id_attribute_name, manager_dict, threadNumber, thread_
         # "normal_counter": 0,
         "set_1": [],
         "set_2": [],
-        "overlap": []
+        "overlap": [],
     }
 
     for set_1_id, set_1 in groups.loc[start_index:end_index, "members"].iteritems():
         print(
-            f"n{threadNumber} index {set_1_id-start_index}/{end_index-start_index} {datetime.now().strftime('%H:%M:%S')} resLen {len(overlaps['set_1'])}")
+            f"n{threadNumber} index {set_1_id-start_index}/{end_index-start_index} {datetime.now().strftime('%H:%M:%S')} resLen {len(overlaps['set_1'])}"
+        )
 
-        for set_2_id, set_2 in groups.loc[set_1_id+1:len(groups), "members"].iteritems():
+        for set_2_id, set_2 in groups.loc[
+            set_1_id + 1 : len(groups), "members"
+        ].iteritems():
             # if set_1.definition.issubset(set_2.definition):
             #     overlaps["set_1"].append(set_1_id)
             #     overlaps["set_2"].append(set_2_id)
             #     overlaps["overlap"].append(len(set_2) / len(set_1))
             #     overlaps["optim_counter"] += 1
             # else:
-            intersection = len(
-                set_1 & set_2)
+            intersection = len(set_1 & set_2)
             if intersection:
-                overlap_value = intersection / \
-                    len(set_1 | set_2)
+                overlap_value = intersection / len(set_1 | set_2)
                 # if overlap_value < 0.2 or overlap_value > 0.8:
                 overlaps["set_1"].append(set_1_id)
                 overlaps["set_2"].append(set_2_id)
                 overlaps["overlap"].append(overlap_value)
                 # overlaps["normal_counter"] += 1
     index = pd.DataFrame(
-        data={"group1": overlaps["set_1"], "group2": overlaps["set_2"], "overlap": overlaps["overlap"]})
+        data={
+            "group1": overlaps["set_1"],
+            "group2": overlaps["set_2"],
+            "overlap": overlaps["overlap"],
+        }
+    )
     index.to_csv(f"{temp_folder}/index_{threadNumber}.csv", index=False)
 
 
@@ -161,25 +175,25 @@ def selectivity_function(executionParameters):
     selectivities = {}
     group = groups.loc[set_id]
     group_members_set = eval(group.members)
-    group_df = pipeline.initial_collection[pipeline.initial_collection[id_attribute_name].isin(
-        group_members_set)]
+    group_df = pipeline.initial_collection[
+        pipeline.initial_collection[id_attribute_name].isin(group_members_set)
+    ]
     for attribute in pipeline.interesting_attributes:
-        values = group_df.loc[:, attribute].value_counts(
-            normalize=True, dropna=False)
+        values = group_df.loc[:, attribute].value_counts(normalize=True, dropna=False)
         for value, selectivity in values.iteritems():
             try:
                 if type(value) == str:
-                    value = value.replace(
-                        '/', Pipeline.SLASH_ESCAPER)
+                    value = value.replace("/", Pipeline.SLASH_ESCAPER)
                 if selectivity != 0.0:
                     key = f"{attribute}={value}"
                     if not key in selectivities:
-                        selectivities[key] = {"set_id": [
-                            set_id], "selectivity": [selectivity]}
+                        selectivities[key] = {
+                            "set_id": [set_id],
+                            "selectivity": [selectivity],
+                        }
                     else:
                         selectivities[key]["set_id"].append(set_id)
-                        selectivities[key]["selectivity"].append(
-                            selectivity)
+                        selectivities[key]["selectivity"].append(selectivity)
             except TypeError:
                 print(f"TypeError: {value}")
     return selectivities
@@ -190,20 +204,14 @@ def index_function(executionParameters):
     sets_members = executionParameters[1]
     set_members = executionParameters[2]
     print(f"started {set_id}")
-    overlaps = {
-        "set_1": [],
-        "set_2": [],
-        "overlap": []
-    }
+    overlaps = {"set_1": [], "set_2": [], "overlap": []}
     set_1_members = eval(set_members)
     # groups.drop(set_1_id)
     for set_2_id, set_2_members_str in enumerate(sets_members):
         set_2_members = eval(set_2_members_str)
-        intersection = len(
-            set_1_members & set_2_members)
+        intersection = len(set_1_members & set_2_members)
         if intersection:
-            overlap_value = intersection / \
-                len(set_1_members | set_2_members)
+            overlap_value = intersection / len(set_1_members | set_2_members)
             overlaps["set_1"].append(set_id)
             overlaps["set_2"].append(set_2_id)
             overlaps["overlap"].append(overlap_value)
@@ -216,9 +224,19 @@ def index_function(executionParameters):
     return overlaps
 
 
-def prepare_data(data_folder="", database_name="", initial_collection_names=[], id_attribute_name="",
-                 build_index=True, build_selectivity_index=True, build_groups=True, index_build_process_count=62,
-                 min_group_size=10, discrete_categories_count=20, exploration_columns=[]):
+def prepare_data(
+    data_folder="",
+    database_name="",
+    initial_collection_names=[],
+    id_attribute_name="",
+    build_index=True,
+    build_selectivity_index=True,
+    build_groups=True,
+    index_build_process_count=62,
+    min_group_size=10,
+    discrete_categories_count=20,
+    exploration_columns=[],
+):
     pipeline = None
     index_folder = f"{data_folder}/{database_name}/{'_'.join(sorted(initial_collection_names))}_index"
     selectivities_folder = index_folder + "/selectivities"
@@ -226,56 +244,86 @@ def prepare_data(data_folder="", database_name="", initial_collection_names=[], 
     temp_folder = index_folder + "/temp"
     Path(temp_folder).mkdir(parents=True, exist_ok=True)
 
-    start_time = datetime.now().strftime('%H:%M:%S')
+    start_time = datetime.now().strftime("%H:%M:%S")
 
     groups = pd.DataFrame()
     if build_groups:
         pipeline = Pipeline(
-            database_name, initial_collection_names, data_folder=data_folder, discrete_categories_count=discrete_categories_count, exploration_columns=exploration_columns)
+            database_name,
+            initial_collection_names,
+            data_folder=data_folder,
+            discrete_categories_count=discrete_categories_count,
+            exploration_columns=exploration_columns,
+        )
         df = pipeline.get_dataset().data[exploration_columns]
         counter = 0
         correspondences_df = pd.DataFrame(columns=["id", "value", "column"])
         item_ids = df[id_attribute_name].to_list()
         for column_name in df:
             if column_name != id_attribute_name:
-                df[column_name+"_category"] = pd.Categorical(df[column_name])
-                df[column_name+"_correspondence_id"] = df[column_name +
-                                                          "_category"].cat.codes
-                df[column_name+"_correspondence_id"] += counter
-                df[column_name +
-                    "_correspondence_id"] = df[column_name +
-                                               "_correspondence_id"].replace({counter - 1: np.NaN})
-                counter = df[column_name+"_correspondence_id"].max() + 1
-                column_correspondence = df[[
-                    column_name+"_correspondence_id", column_name]].drop_duplicates()
+                df[column_name + "_category"] = pd.Categorical(df[column_name])
+                df[column_name + "_correspondence_id"] = df[
+                    column_name + "_category"
+                ].cat.codes
+                df[column_name + "_correspondence_id"] += counter
+                df[column_name + "_correspondence_id"] = df[
+                    column_name + "_correspondence_id"
+                ].replace({counter - 1: np.NaN})
+                counter = df[column_name + "_correspondence_id"].max() + 1
+                column_correspondence = df[
+                    [column_name + "_correspondence_id", column_name]
+                ].drop_duplicates()
                 column_correspondence = column_correspondence.rename(
-                    columns={column_name+"_correspondence_id": "id", column_name: "value"}).sort_values(by="id")
+                    columns={
+                        column_name + "_correspondence_id": "id",
+                        column_name: "value",
+                    }
+                ).sort_values(by="id")
                 column_correspondence["column"] = column_name
                 if column_name != id_attribute_name:
                     correspondences_df = correspondences_df.append(
-                        column_correspondence, ignore_index=True)
-                df = df.drop(columns=[column_name, column_name+"_category"])
+                        column_correspondence, ignore_index=True
+                    )
+                df = df.drop(columns=[column_name, column_name + "_category"])
 
         correspondences_df.to_csv(
-            f"{index_folder}/correspondences.csv", index=False, quoting=csv.QUOTE_NONNUMERIC)
+            f"{index_folder}/correspondences.csv",
+            index=False,
+            quoting=csv.QUOTE_NONNUMERIC,
+        )
 
         df = df.astype(str)
         df = df.replace(to_replace=r"\.0+$", value="", regex=True)
         df = df.replace(to_replace="nan", value="")
         print(df.info())
         df = df.drop(id_attribute_name, axis=1)
-        df.to_csv(f"{temp_folder}/items.dat",
-                  index=False, sep=" ", header=False, )
+        df.to_csv(
+            f"{temp_folder}/items.dat",
+            index=False,
+            sep=" ",
+            header=False,
+        )
         print("Running LCM")
         # subprocess.run(["lcm", "CI", "-l", "1", "-U", str(2*len(df)/3) , "./data/dataConversion/items.dat", "10", "./data/dataConversion/groups.dat"])
-        subprocess.run(["lcm", "CI", "-l", "1", "-u", "25", f"{temp_folder}/items.dat",
-                        str(min_group_size), f"{temp_folder}/groups.dat"])
+        subprocess.run(
+            [
+                "lcm",
+                "CI",
+                "-l",
+                "1",
+                "-u",
+                "25",
+                f"{temp_folder}/items.dat",
+                str(min_group_size),
+                f"{temp_folder}/groups.dat",
+            ]
+        )
 
         group_definitions = []
         group_members = []
         group_member_counts = []
 
-        with open(f"{temp_folder}/groups.dat", 'rb') as group_file:
+        with open(f"{temp_folder}/groups.dat", "rb") as group_file:
             while True:
                 group_definition_line = group_file.readline().rstrip()
                 if not group_definition_line:
@@ -285,11 +333,13 @@ def prepare_data(data_folder="", database_name="", initial_collection_names=[], 
                 group_member_counts.append(len(members))
                 # members = map(lambda x: item_ids[x], members)
                 group_definitions.append(
-                    set(np.fromstring(group_definition_line, dtype=int, sep=" ")))
+                    set(np.fromstring(group_definition_line, dtype=int, sep=" "))
+                )
                 # group_members.append(set(members))
 
         groups = pd.DataFrame(
-            data={"definition": group_definitions, "member_count": group_member_counts})
+            data={"definition": group_definitions, "member_count": group_member_counts}
+        )
         groups = groups.sort_values("member_count", ascending=False)
         groups = groups.reset_index()
         groups = groups.drop(["index"], axis=1)
@@ -314,11 +364,8 @@ def prepare_data(data_folder="", database_name="", initial_collection_names=[], 
 
         groups = pd.read_csv(
             f"{index_folder}/groups.csv",
-            converters={
-                "definition": eval,
-                "members": eval
-            },
-            index_col="id"
+            converters={"definition": eval, "members": eval},
+            index_col="id",
         )
 
     d["groups"] = groups
@@ -337,18 +384,24 @@ def prepare_data(data_folder="", database_name="", initial_collection_names=[], 
         print("Building selectivity indexes")
         if pipeline == None:
             pipeline = Pipeline(
-                database_name, initial_collection_names, data_folder=data_folder)
+                database_name, initial_collection_names, data_folder=data_folder
+            )
         d["pipeline"] = pipeline
         futures = list()
         selectivities = {}
         with ProcessPoolExecutor(max_workers=index_build_process_count) as executor:
             # futures = executor.map(selectivity_function, executionParameters)
             for i in range(index_build_process_count):
-                futures.append(executor.submit(selectivity_thread_function, step=step,
-                                               id_attribute_name=id_attribute_name,
-                                               manager_dict=d,
-                                               group_count=group_count,
-                                               threadNumber=i))
+                futures.append(
+                    executor.submit(
+                        selectivity_thread_function,
+                        step=step,
+                        id_attribute_name=id_attribute_name,
+                        manager_dict=d,
+                        group_count=group_count,
+                        threadNumber=i,
+                    )
+                )
 
             for future in futures:
                 thread_selectivities = future.result()
@@ -358,14 +411,21 @@ def prepare_data(data_folder="", database_name="", initial_collection_names=[], 
                             selectivities[key] = selectivity
                         else:
                             selectivities[key]["set_id"] += selectivity["set_id"]
-                            selectivities[key]["selectivity"] += selectivity["selectivity"]
+                            selectivities[key]["selectivity"] += selectivity[
+                                "selectivity"
+                            ]
 
         print("Joining selectivity indexes")
         for key, selectivity in selectivities.items():
             set_df = pd.DataFrame(
-                data={"set_id": selectivity["set_id"], "selectivity": selectivity["selectivity"]}).sort_values(by="selectivity")
+                data={
+                    "set_id": selectivity["set_id"],
+                    "selectivity": selectivity["selectivity"],
+                }
+            ).sort_values(by="selectivity")
             set_df.to_csv(
-                os.path.join(selectivities_folder, f"{key[0:128]}.csv"), index=False)
+                os.path.join(selectivities_folder, f"{key[0:128]}.csv"), index=False
+            )
         selectivities = None
         print(gc.collect())
 
@@ -377,7 +437,7 @@ def prepare_data(data_folder="", database_name="", initial_collection_names=[], 
             # "normal_counter": 0,
             "set_1": [],
             "set_2": [],
-            "overlap": []
+            "overlap": [],
         }
 
         # smm = SharedMemoryManager()
@@ -392,15 +452,20 @@ def prepare_data(data_folder="", database_name="", initial_collection_names=[], 
         with ProcessPoolExecutor(max_workers=index_build_process_count) as executor:
             # futures = executor.map(index_function, executionParameters)
             thread_boundaries = get_thread_boundaries(
-                len(groups), index_build_process_count)
+                len(groups), index_build_process_count
+            )
             for i in range(index_build_process_count):
 
-                futures.append(executor.submit(index_thread_function,
-                                               id_attribute_name=id_attribute_name,
-                                               manager_dict=d,
-                                               threadNumber=i,
-                                               thread_boundaries=thread_boundaries,
-                                               temp_folder=temp_folder))
+                futures.append(
+                    executor.submit(
+                        index_thread_function,
+                        id_attribute_name=id_attribute_name,
+                        manager_dict=d,
+                        threadNumber=i,
+                        thread_boundaries=thread_boundaries,
+                        temp_folder=temp_folder,
+                    )
+                )
 
             for future in futures:
                 future.result()
@@ -418,17 +483,17 @@ def prepare_data(data_folder="", database_name="", initial_collection_names=[], 
         # overlaps["overlap"] += overlaps["overlap"]
         frames = []
         for i in range(index_build_process_count):
-            frames.append(pd.read_csv(
-                f"{temp_folder}/index_{i}.csv"))
+            frames.append(pd.read_csv(f"{temp_folder}/index_{i}.csv"))
         index = pd.concat(frames)
         reverted_index = index.copy()
         reverted_index.rename(
-            columns={"group1": "group2", "group2": "group1"}, inplace=True)
+            columns={"group1": "group2", "group2": "group1"}, inplace=True
+        )
         index = pd.concat([index, reverted_index])
         index.sort_values(by=["group1", "overlap"], inplace=True)
         index.to_csv(f"{index_folder}/index.csv", index=False)
     shutil.rmtree(temp_folder)
-    end_time = datetime.now().strftime('%H:%M:%S')
+    end_time = datetime.now().strftime("%H:%M:%S")
     # print("optim_counter: " + str(overlaps["optim_counter"]))
     # print("normal_counter: " + str(overlaps["normal_counter"]))
     print(f"start: {start_time} end: {end_time}")

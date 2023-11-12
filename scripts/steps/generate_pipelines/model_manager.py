@@ -1,36 +1,38 @@
 import tensorflow as tf
 import numpy as np
 import json
+import pathlib
+
 from app.pipelines.pipeline_precalculated_sets import PipelineWithPrecalculatedSets
 from rl.A3C_2_actors.state_encoder import StateEncoder
 from rl.A3C_2_actors.action_manager import ActionManager
 
 
 class ModelManager:
-    def __init__(self, pipeline: PipelineWithPrecalculatedSets, model_path: str):
+    def __init__(self, pipeline: PipelineWithPrecalculatedSets, path: pathlib.Path):
         self.pipeline = pipeline
         self.action_manager = ActionManager(
             self.pipeline,
             operators=["by_facet", "by_superset", "by_neighbors", "by_distribution"],
         )
-        self.models = {}
         self.lstm_steps = 3
         self.counter_curiosity_factor = 100 / 250
 
-        with open(f"{model_path}/set_op_counters.json") as f:
-            set_op_counters = json.load(f)
-            self.model = {
-                "set": tf.keras.models.load_model(f"{model_path}/set_actor"),
-                "operation": tf.keras.models.load_model(
-                    f"{model_path}/operation_actor"
-                ),
-                "set_op_counters": set_op_counters,
-            }
+        set_op_counters = None
+        set_op_counters_path = path / "set_op_counters.json"
+        if set_op_counters_path.exists():
+            with set_op_counters_path.open('r') as f:
+                set_op_counters = json.load(f)
+
+        self.model = {
+            "set": tf.keras.models.load_model(f"{path}/set_actor"),
+            "operation": tf.keras.models.load_model(f"{path}/operation_actor"),
+            "set_op_counters": set_op_counters,
+        }
 
     def get_prediction(
         self,
         datasets,
-        variant,
         target_items,
         found_items_with_ratio,
         previous_set_states=None,

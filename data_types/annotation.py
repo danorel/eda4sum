@@ -1,20 +1,19 @@
 import typing_extensions as te
 
 
-class PipelineBodyAnnotation(te.TypedDict):
-    final_curiosity: float
-    average_curiosity: float
+"""
+TODO: find whether these properties could be derrived from pipeline/model:
+
     final_familiarity: float
-    average_familiarity: float
-    total_length_of_pipeline: int
-
-
-class PipelineBodyItemAnnotation(te.TypedDict):
-    target_set_rate: float
-    delta_curisity: float
+    final_curisity: float
     delta_familiarity: float
-    remaining_operators: str
+    delta_curisity: float
+"""
 
 
-class PipelineAnnotation(PipelineBodyAnnotation, PipelineBodyItemAnnotation):
-    pass
+class Annotation(te.TypedDict):
+    total_length: int
+    remaining_operators: dict
+    delta_novelty: float
+    delta_uniformity: float
+    delta_diversity: float
