@@ -5,7 +5,6 @@ from typing import Dict, List, Optional
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from app.summary_evaluator import SummaryEvaluator
 from rl.A3C_2_actors.target_set_generator import TargetSetGenerator
 from starlette.responses import FileResponse
 
@@ -50,81 +49,6 @@ async def read_index():
 
 def getPipeline(request: OperatorRequestBody):
     return database_pipeline_cache[request.database]
-
-
-def get_items_sets(sets, pipeline, get_scores, get_predicted_scores, galaxy_class_scores, seen_sets=None, previous_dataset_ids=None, utility_weights=None, previous_operations=None, decreasing_gamma=False):
-    results = {
-        "sets": [],
-        "previous_operations": previous_operations
-    }
-    evaluator = SummaryEvaluator(
-        pipeline, galaxy_class_scores=galaxy_class_scores)
-    evaluator.evaluate_sets(sets)
-    results.update(evaluator.get_evaluation_scores())
-    results["galaxy_class_scores"] = evaluator.galaxy_class_scores
-    for dataset in sets:
-        res = {
-            "length": len(dataset.data),
-            "id": int(dataset.set_id) if dataset.set_id != None else -1,
-            "data": [],
-            "predicate": []
-        }
-
-        for predicate in dataset.predicate.components:
-            res["predicate"].append(
-                {"dimension": predicate.attribute, "value": str(predicate.value)})
-
-        # set.data = set.data[["galaxies.ra", "galaxies.dec"]]
-        if pipeline.database_name == 'sdss':
-            if len(dataset.data) > 12:
-                data = dataset.data.sample(n=12, random_state=1)
-            else:
-                data = dataset.data
-            for index, galaxy in data[["galaxies.ra", "galaxies.dec"]].iterrows():
-                res["data"].append(
-                    {"ra": float(galaxy["galaxies.ra"]), "dec": float(galaxy["galaxies.dec"])})
-        else:
-            data = dataset.data.sort_values(
-                "dm-authors.seniority_original", ascending=False)
-            if len(dataset.data) > 40:
-                data = data.iloc[0:40]
-            for index, galaxy in data.iterrows():
-                res["data"].append(
-                    {"author_name": galaxy["dm-authors.author_name"]})
-
-        results["sets"].append(res)
-    if get_scores:
-        summary_uniformity_score, sets_uniformity_scores = pipeline.utility_manager.get_uniformity_scores(
-            sets, pipeline)
-        results["distance"] = pipeline.utility_manager.get_min_distance(
-            sets, pipeline)
-        results["uniformity"] = summary_uniformity_score
-
-        for index, score in enumerate(sets_uniformity_scores):
-            results["sets"][index]["uniformity"] = score
-        summary_novelty_score, seen_sets, new_utility_weights = pipeline.utility_manager.get_novelty_scores_and_utility_weights(
-            sets, seen_sets, pipeline, utility_weights=utility_weights, decreasing_gamma=decreasing_gamma)
-        results["novelty"] = summary_novelty_score
-        results["utility"] = pipeline.utility_manager.compute_utility(utility_weights, results["uniformity"],
-                                                                      results["distance"], results["novelty"])
-        results["utility_weights"] = utility_weights = new_utility_weights
-        results["seen_sets"] = seen_sets
-    else:
-        results["uniformity"] = None
-        results["novelty"] = None
-
-        for dataset in results["sets"]:
-            dataset["uniformity"] = None
-            dataset["novelty"] = None
-        seen_sets = seen_sets | set(map(lambda x: int(x.set_id), sets))
-        results["seen_sets"] = seen_sets
-    if get_predicted_scores:
-        results["predictedScores"] = pipeline.utility_manager.get_future_scores(
-            sets, pipeline, seen_sets, previous_dataset_ids, utility_weights, previous_operations)
-    else:
-        results["predictedScores"] = {}
-
-    return results
 
 
 class OperatorRequest(BaseModel):
@@ -178,49 +102,7 @@ async def get_predicted_scores(operator_request: OperatorRequest):
          description="Groups the input set items by a list of provided attributes and returns the n biggest resulting sets",
          tags=["operators"])
 async def by_facet_g(operator_request: OperatorRequest):
-    result = []
-    try:
-        # print(requestBody.json())
-        pipeline: PipelineWithPrecalculatedSets = database_pipeline_cache[
-            operator_request.dataset_to_explore]
-        if operator_request.input_set_id == -1:
-            dataset = pipeline.get_dataset()
-        else:
-            dataset = pipeline.get_groups_as_datasets(
-                [operator_request.input_set_id])[0]
-        number_of_groups = 10 if len(operator_request.dimensions) == 1 else 5
-        result_sets = pipeline.by_facet(
-            dataset=dataset, attributes=operator_request.dimensions, number_of_groups=number_of_groups)
-        result_sets = [d for d in result_sets if d.set_id !=
-                       None and d.set_id >= 0]
-        if len(result_sets) == 0:
-            result_sets = [dataset]
-        ####
-        # result_sets = pipeline.get_groups_as_datasets([272574, 326166, 346950, 267949, 346137, 36011, 306809, 292659, 308049, 271882])
-        ###
-        operation_identifier = f"by_facet-{operator_request.dimensions[0]}-{dataset.set_id}"
-        if not operation_identifier in operator_request.previous_operations:
-            operator_request.previous_operations.append(operation_identifier)
-        prediction_result = {}
-        if operator_request.weights_mode != None:
-            prediction_result = model_manager.get_prediction(result_sets, operator_request.weights_mode, operator_request.target_items,
-                                                             operator_request.found_items_with_ratio, operator_request.previous_set_states, operator_request.previous_operation_states)
-        result = get_items_sets(result_sets, pipeline, operator_request.get_scores,
-                                operator_request.get_predicted_scores, operator_request.galaxy_class_scores, seen_sets=set(
-                                    operator_request.seen_sets),
-                                previous_dataset_ids=set(operator_request.dataset_ids), utility_weights=operator_request.utility_weights,
-                                previous_operations=operator_request.previous_operations, decreasing_gamma=operator_request.decreasing_gamma)
-        result.update(prediction_result)
-        return result
-    except Exception as error:
-        print(error)
-        # print(requestBody.json())
-        traceback.print_tb(error.__traceback__)
-        try:
-            print(json.dumps(result))
-        except Exception as err:
-            print(err)
-        return 0
+    pass
 
 
 @app.put("/operators/by_superset-g",

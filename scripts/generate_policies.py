@@ -1,7 +1,7 @@
 import argparse
 
 from .utils.sampling.node_sampling import node_sampling
-from .utils.generative import train_policies
+from .utils.all_inclusive import generate_pipelines_from_policies, train_policies
 
 parser = argparse.ArgumentParser(
                     prog='Policy Trainer',
@@ -22,5 +22,5 @@ node_sampling(
     args.max_item_set_nodes
 )
 train_policies(args.episodes)
-# generate_pipelines_from_policies()
+generate_pipelines_from_policies(min_pipeline_size=3, max_pipeline_size=10)
 # annotate_pipelines()

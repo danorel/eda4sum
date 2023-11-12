@@ -1,6 +1,8 @@
 import typing as t
 import typing_extensions as te
 
+from pydantic import BaseModel
+
 from data_types.annotation import PipelineAnnotation
 
 ID: te.TypeAlias = str
@@ -22,18 +24,26 @@ class InputSet(te.TypedDict):
     novelty: t.Optional[t.Any]
 
 
-class RequestData(te.TypedDict):
-    get_scores: bool
-    get_predicted_scores: bool
-    seen_predicates: t.List[str]
-    input_set_id: int
-    dimensions: t.List[str]
-    target_set: str
-    curiosity_weight: float
-    target_items: t.List[ID]
-    found_items_with_ratio: t.Dict[ID, float]
-    previous_set_states: t.List[t.List[float]]
-    previous_operation_states: t.List[t.List[float]]
+class RequestData(BaseModel):
+    dataset_to_explore: str
+    input_set_id: t.Optional[int] = None
+    dimensions: t.Optional[t.List[str]] = None
+    get_scores: t.Optional[bool] = False
+    get_predicted_scores: t.Optional[bool] = False
+    target_set: t.Optional[str] = None
+    curiosity_weight: t.Optional[float] = None
+    found_items_with_ratio: t.Optional[t.Dict[str, float]] = None
+    target_items: t.Optional[t.List[str]] = None
+    previous_set_states: t.Optional[t.List[t.List[float]]] = None
+    previous_operation_states: t.Optional[t.List[t.List[float]]] = None
+    seen_predicates: t.Optional[t.List[str]] = []
+    dataset_ids: t.Optional[t.List[int]] = None
+    seen_sets: t.Optional[t.List[int]] = [],
+    utility_weights: t.Optional[t.List[float]] = [0.333, 0.333, 0.334],
+    previous_operations: t.Optional[t.List[str]] = [],
+    decreasing_gamma: t.Optional[bool] = False,
+    galaxy_class_scores: t.Optional[t.Dict[str, float]] = None,
+    weights_mode: t.Optional[str] = None
 
 
 class PipelineHead(te.TypedDict):
