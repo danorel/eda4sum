@@ -13,3 +13,4 @@ saved_models
 *.log
 .DS_STORE
 __pycache__
+.env

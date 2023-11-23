@@ -1,7 +1,6 @@
 import os
 import json
 import traceback
-import multiprocessing
 from copy import Error
 from threading import Lock, Thread
 
@@ -20,39 +19,23 @@ from rl.A3C_2_actors.set_actor import SetActor
 
 tf.keras.backend.set_floatx("float64")
 
-ID = wandb.util.generate_id()
-WORKERS = multiprocessing.cpu_count()
-CUR_EPISODE = 0
-GAMMA = 0.99
-EVAL_INTERVAL = 10
-UPDATE_INTERVAL = 20
-ACTOR_LR = 0.00003
-CRITIC_LR = 0.00003
-ICM_LR = 0.05
-LSTM_STEPS = 3
-OPERATORS = ["by_facet", "by_superset", "by_neighbors", "by_distribution"]
-UTILITY_WEIGHTS = [0.333, 0.333, 0.334]
-UTILITY_MODE = None
-CURIOSITY_RATIO = 0.0
-COUNTER_CURIOSITY_RATIO = 0.0
-
-data_folder = "./app/data/"
-
-
 class Agent:
     """
     target_set: .json file name
     mode: "scattered", "concentrated"
     """
 
-    def __init__(self, env_name, target_set_name: str, mode: str):
-        self.agent_name = f"{target_set_name}/{mode}"
+    def __init__(self, env_name, agent_name, target_set_name: str, mode: str, config: dict):
+        self.env_name = env_name
+        self.agent_name = agent_name
         self.mode = mode
         self.target_set_name = target_set_name
+        self.config = config
+
         self.pipeline = PipelineWithPrecalculatedSets(
             "sdss",
             ["galaxies"],
-            data_folder=data_folder,
+            data_folder="./app/data/",
             discrete_categories_count=10,
             min_set_size=10,
             exploration_columns=[
@@ -66,27 +49,30 @@ class Agent:
             ],
             id_column="galaxies.objID",
         )
-        self.steps = LSTM_STEPS
+
+        self.steps = self.config['lstm_steps']
+
         if self.mode == "scattered":
-            self.episode_steps = 50
+            self.episode_steps = 25
         elif self.mode == "concentrated":
             self.episode_steps = 25
+
         self.best_evaluation_so_far = {
             "mean_reward": 0,
             "mean_utility": 0,
             "mean_score": 0,
         }
+
         self.env = PipelineEnvironment(
             self.pipeline,
             database_name="sdss",
-            target_set_name=target_set_name,
-            mode=mode,
+            target_set_name=self.target_set_name,
+            mode=self.mode,
             episode_steps=self.episode_steps,
-            operators=OPERATORS,
-            utility_mode=UTILITY_MODE,
-            utility_weights=UTILITY_WEIGHTS,
+            operators=self.config['operators'],
+            utility_mode=self.config['utility_mode'],
+            utility_weights=self.config['utility_weights'],
         )
-        self.env_name = env_name
 
         self.set_state_dim = self.env.set_state_dim
         self.operation_state_dim = self.env.operation_state_dim
@@ -97,67 +83,48 @@ class Agent:
             self.set_state_dim,
             self.set_action_dim,
             self.steps,
-            ACTOR_LR,
+            self.config['actor_lr'],
             self.agent_name,
         )
         self.global_operation_actor = OperationActor(
             self.operation_state_dim,
             self.operation_action_dim,
             self.steps,
-            ACTOR_LR,
+            config['actor_lr'],
             self.agent_name,
         )
         self.global_critic = Critic(
-            self.set_state_dim, self.steps, CRITIC_LR, self.agent_name
+            self.set_state_dim, 
+            self.steps, 
+            self.config['critic_lr'], 
+            self.agent_name
         )
         self.set_op_counters = {}
         self.curiosity_module = IntrinsicCuriosityForwardModel(
             self.operation_state_dim + 1,
             self.set_state_dim,
             16,
-            ICM_LR,
+            self.config['icm_lr'],
             self.agent_name,
         )
-        self.num_workers = WORKERS
+        self.num_workers = config['workers']
+        
         greedy_summarizer = GreedySummarizer(self.env.pipeline)
         uniformity_threshold = 2 if self.pipeline.database_name == "sdss" else 2
         self.startup_sets = greedy_summarizer.get_summary(10, uniformity_threshold, 5)
-        self.observe()
+
         self.save()
 
-    @property
-    def args(self):
-        return {
-            "dataset": "sdss",
-            "gamma": GAMMA,
-            "update_interval": UPDATE_INTERVAL,
-            "actor_lr": ACTOR_LR,
-            "critic_lr": CRITIC_LR,
-            "icm_lr": ICM_LR,
-            "workers": WORKERS,
-            "lstm_steps": LSTM_STEPS,
-            "curiosity_ratio": CURIOSITY_RATIO,
-            "counter_curiosity_ratio": COUNTER_CURIOSITY_RATIO,
-            "operators": OPERATORS,
-            "utility_mode": UTILITY_MODE,
-            "utility_weights": UTILITY_WEIGHTS,
-            "target_set_name": self.target_set_name,
-            "mode": self.mode,
-        }
-
     def save(self):
-        if not os.path.exists(f"saved_models/{self.agent_name}"):
-            os.makedirs(f"saved_models/{self.agent_name}")
-        with open(f"saved_models/{self.agent_name}/info.json", "w") as f:
-            json.dump(self.args, f, indent=1)
-
-    def observe(self):
-        wandb.init(project="xeda", id=ID, name=self.agent_name, config=self.args)
+        if not os.path.exists(f"policies/{self.agent_name}"):
+            os.makedirs(f"policies/{self.agent_name}")
+        with open(f"policies/{self.agent_name}/info.json", "w") as f:
+            json.dump(self.config, f, indent=1)
 
     def train(self, episodes: int):
         workers = []
 
-        for agent_id in range(WORKERS):
+        for agent_id in range(self.config['workers']):
             env = PipelineEnvironment(
                 self.pipeline,
                 target_set_name=self.target_set_name,
@@ -165,14 +132,15 @@ class Agent:
                 agentId=agent_id,
                 episode_steps=self.episode_steps,
                 target_items=self.env.state_encoder.target_items,
-                operators=OPERATORS,
-                utility_mode=UTILITY_MODE,
-                utility_weights=UTILITY_WEIGHTS,
+                operators=self.config['operators'],
+                utility_mode=self.config['utility_mode'],
+                utility_weights=self.config['utility_weights'],
             )
 
             workers.append(
                 WorkerAgent(
                     env,
+                    self.config,
                     self.agent_name,
                     self.global_set_actor,
                     self.global_operation_actor,
@@ -202,6 +170,7 @@ class WorkerAgent(Thread):
     def __init__(
         self,
         env: PipelineEnvironment,
+        config,
         agent_name: str,
         global_set_actor: SetActor,
         global_operation_actor: OperationActor,
@@ -218,6 +187,7 @@ class WorkerAgent(Thread):
         self.lock = Lock()
         self.other_lock = Lock()
         self.env = env
+        self.config = config
         self.agentId = agentId
         self.agent_name = agent_name
         self.set_state_dim = env.set_state_dim
@@ -257,7 +227,7 @@ class WorkerAgent(Thread):
         self.counter_curiosity_factor = (
             self.target_max_curiosity_reward / self.episode_steps
         )
-        if CURIOSITY_RATIO > 0:
+        if self.config['curiosity_ratio'] > 0:
             self.global_curiosity_module = global_curiosity_module
             self.curiosity_module = IntrinsicCuriosityForwardModel(
                 global_curiosity_module.prediction_input_state_dim,
@@ -278,7 +248,7 @@ class WorkerAgent(Thread):
             cumulative = next_v_value
 
         for k in reversed(range(0, len(rewards))):
-            cumulative = GAMMA * cumulative + rewards[k]
+            cumulative = self.config['gamma'] * cumulative + rewards[k]
             td_targets[k] = cumulative
         return td_targets
 
@@ -358,8 +328,8 @@ class WorkerAgent(Thread):
                 intrinsic_reward = self.counter_curiosity_factor / op_counter
                 episode_intrinsic_reward += float(intrinsic_reward)
                 reward = (
-                    COUNTER_CURIOSITY_RATIO * float(intrinsic_reward)
-                    + (1 - COUNTER_CURIOSITY_RATIO) * reward
+                    self.config['counter_curiosity_ratio'] * float(intrinsic_reward)
+                    + (1 - self.config['counter_curiosity_ratio']) * reward
                 )
                 episode_reward += reward
 
@@ -391,7 +361,7 @@ class WorkerAgent(Thread):
             self.set_actor.save_model(step="best_reward")
             self.critic.save_model(step="best_reward")
             with open(
-                f"saved_models/{self.agent_name}/best_reward/set_op_counters.json", "w"
+                f"policies/{self.agent_name}/best_reward/set_op_counters.json", "w"
             ) as f:
                 json.dump(self.global_set_op_counters, f, indent=1)
         if mean_utility > self.global_best_evaluation_so_far["mean_utility"]:
@@ -401,7 +371,7 @@ class WorkerAgent(Thread):
             self.set_actor.save_model(step="best_utility")
             self.critic.save_model(step="best_utility")
             with open(
-                f"saved_models/{self.agent_name}/best_utility/set_op_counters.json", "w"
+                f"policies/{self.agent_name}/best_utility/set_op_counters.json", "w"
             ) as f:
                 json.dump(self.global_set_op_counters, f, indent=1)
         if mean_score > self.global_best_evaluation_so_far["mean_score"]:
@@ -411,13 +381,13 @@ class WorkerAgent(Thread):
             self.set_actor.save_model(step="best_score")
             self.critic.save_model(step="best_score")
             with open(
-                f"saved_models/{self.agent_name}/best_score/set_op_counters.json", "w"
+                f"policies/{self.agent_name}/best_score/set_op_counters.json", "w"
             ) as f:
                 json.dump(self.global_set_op_counters, f, indent=1)
 
     def train(self):
-        global CUR_EPISODE
-        while self.max_episodes >= CUR_EPISODE:
+        cur_episode = 0
+        while self.max_episodes >= cur_episode:
             set_state_batch = []
             operation_state_batch = []
             set_action_batch = []
@@ -491,7 +461,7 @@ class WorkerAgent(Thread):
                     else:
                         op_counter = episode_set_op_counters[set_op_pair]
                     episode_total_op_counters += op_counter
-                    if CURIOSITY_RATIO > 0:
+                    if self.config['curiosity_ratio'] > 0:
                         icm_state = np.concatenate(
                             ([operation_action], operation_state)
                         )
@@ -508,8 +478,8 @@ class WorkerAgent(Thread):
 
                         episode_extrinsic_reward += reward
                         reward = (
-                            CURIOSITY_RATIO * float(intrinsic_reward)
-                            + (1 - CURIOSITY_RATIO) * reward
+                            self.config['curiosity_ratio'] * float(intrinsic_reward)
+                            + (1 - self.config['curiosity_ratio']) * reward
                         )
                         icm_states_batch.append(
                             np.reshape(icm_state, [1, self.operation_state_dim + 1])
@@ -523,8 +493,8 @@ class WorkerAgent(Thread):
                         intrinsic_reward = self.counter_curiosity_factor / op_counter
                         episode_intrinsic_reward += float(intrinsic_reward)
                         reward = (
-                            COUNTER_CURIOSITY_RATIO * float(intrinsic_reward)
-                            + (1 - COUNTER_CURIOSITY_RATIO) * reward
+                            self.config['counter_curiosity_ratio'] * float(intrinsic_reward)
+                            + (1 - self.config['counter_curiosity_ratio']) * reward
                         )
                     episode_reward += reward
 
@@ -546,7 +516,7 @@ class WorkerAgent(Thread):
                     )
                     operation_action_batch.append(operation_action)
 
-                    if len(set_state_batch) >= UPDATE_INTERVAL or done:
+                    if len(set_state_batch) >= self.config['update_interval'] or done:
                         set_states = self.list_to_batch(set_state_batch)
                         rewards = self.list_to_batch(reward_batch)
 
@@ -568,7 +538,7 @@ class WorkerAgent(Thread):
                                 self.critic.model.set_weights(
                                     self.global_critic.model.get_weights()
                                 )
-                                if CURIOSITY_RATIO > 0:
+                                if self.config['curiosity_ratio'] > 0:
                                     icm_states = self.list_to_batch(icm_states_batch)
                                     icm_ground_truths = self.list_to_batch(
                                         icm_ground_truth_batch
@@ -593,16 +563,16 @@ class WorkerAgent(Thread):
                                 save_interval = 250
                                 if (
                                     done
-                                    and CUR_EPISODE != 0
-                                    and CUR_EPISODE % save_interval == 0
+                                    and cur_episode != 0
+                                    and cur_episode % save_interval == 0
                                 ):
-                                    ep = CUR_EPISODE
+                                    ep = cur_episode
 
                                     self.operation_actor.save_model(step=ep)
                                     self.set_actor.save_model(step=ep)
                                     self.critic.save_model(step=ep)
                                     with open(
-                                        f"saved_models/{self.agent_name}/{ep}/set_op_counters.json",
+                                        f"policies/{self.agent_name}/{ep}/set_op_counters.json",
                                         "w",
                                     ) as f:
                                         json.dump(
@@ -610,8 +580,8 @@ class WorkerAgent(Thread):
                                         )
                                 if (
                                     done
-                                    and CUR_EPISODE != 0
-                                    and CUR_EPISODE % EVAL_INTERVAL == 0
+                                    and cur_episode != 0
+                                    and cur_episode % self.config['eval_interval'] == 0
                                 ):
                                     self.evaluate()
 
@@ -638,7 +608,7 @@ class WorkerAgent(Thread):
                 if not failed:
                     print(
                         "EP{} Agent{} EpisodeReward={}".format(
-                            CUR_EPISODE, self.agentId, episode_reward
+                            cur_episode, self.agentId, episode_reward
                         )
                     )
                     log = {
@@ -710,12 +680,12 @@ class WorkerAgent(Thread):
                                 ],
                             }
                         )
-                    if CURIOSITY_RATIO > 0:
+                    if self.config['curiosity_ratio'] > 0:
                         log["avg_loss"] = episode_loss / self.episode_steps
                     wandb.log(log)
 
                     with self.other_lock:
-                        CUR_EPISODE += 1
+                        cur_episode += 1
 
             except Error as error:
                 print(error)

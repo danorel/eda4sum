@@ -52,7 +52,7 @@ class Critic:
             step = "final"
         else:
             step = str(step)
-        directory = "saved_models/" + name + "/" + step + "/critic/"
+        directory = "policies/" + name + "/" + step + "/critic/"
 
         if not os.path.exists(directory):
             os.makedirs(directory)

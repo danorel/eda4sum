@@ -83,36 +83,6 @@ else:
             if key != "resume" and key != "resume_step":
                 setattr(args, key, items[key])
 
-wandb.init(
-    name=args.name,
-    project="deep-rl-tf2",
-    id=args.id,
-    resume=args.resume,
-    config={
-        "dataset": args.dataset,
-        "gamma": args.gamma,
-        "update_interval": args.update_interval,
-        "actor_lr": args.actor_lr,
-        "critic_lr": args.critic_lr,
-        "icm_lr": args.icm_lr,
-        "workers": args.workers,
-        "lstm_steps": args.lstm_steps,
-        "target_set": args.target_set,
-        "notes": args.notes,
-        "mode": args.mode,
-        "curiosity_ratio": args.curiosity_ratio,
-        "counter_curiosity_ratio": args.counter_curiosity_ratio,
-        "operators": args.operators,
-        "utility_mode": args.utility_mode,
-        "utility_weights": args.utility_weights,
-    },
-)
-if args.resume_step != None:
-    CUR_EPISODE = args.resume_step + 1
-else:
-    CUR_EPISODE = 0
-
-
 class Agent:
     def __init__(self, env_name):
         data_folder = "./app/data/"

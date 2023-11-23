@@ -130,13 +130,3 @@ def node_sampling(
         raise NotImplementedError()
 
     logger.info("Node sampling is done and saved!")
-
-
-if __name__ == "__main__":
-    members = node_sampling(
-        sample_amount=100,
-        sampling_rate=0.5,
-        min_item_set_nodes=100,
-        max_item_set_nodes=1000,
-        sample_by='csv'
-    )

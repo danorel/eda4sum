@@ -58,7 +58,7 @@ class SetActor:
             step = "final"
         else:
             step = str(step)
-        directory = "saved_models/" + name + "/" + step + "/set_actor/"
+        directory = "policies/" + name + "/" + step + "/set_actor/"
 
         if not os.path.exists(directory):
             os.makedirs(directory)

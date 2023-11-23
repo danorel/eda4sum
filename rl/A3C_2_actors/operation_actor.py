@@ -58,7 +58,7 @@ class OperationActor:
             step = "final"
         else:
             step = str(step)
-        directory = "saved_models/" + name + "/" + step + "/operation_actor/"
+        directory = "policies/" + name + "/" + step + "/operation_actor/"
 
         if not os.path.exists(directory):
             os.makedirs(directory, exist_ok=True)
